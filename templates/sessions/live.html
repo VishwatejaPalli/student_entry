@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Live Cockpit — {{ session.session_name }} — Room Entry System{% endblock %}
+
+{% block content %}
+<div class="container container--wide">
+    <!-- Live Session Banner Header -->
+    <div class="card live-cockpit-banner mb-lg">
+        <div class="flex items-center justify-between flex-wrap gap-md">
+            <div>
+                <div class="flex items-center gap-sm mb-xs">
+                    <span class="pulse-indicator"></span>
+                    <span class="badge badge--in">LIVE CLASS SESSION</span>
+                    <span class="text-muted text-sm">#{{ session.id }}</span>
+                </div>
+                <h1 style="font-size: 1.75rem; margin-bottom: 2px;">{{ session.session_name }}</h1>
+                <p class="text-secondary text-sm">
+                    🏫 {{ session.class_name or 'General' }} &nbsp;•&nbsp; 
+                    📚 {{ session.subject or 'Lab' }} &nbsp;•&nbsp; 
+                    📍 {{ session.room or 'Room' }} &nbsp;•&nbsp; 
+                    👨‍🏫 {{ session.faculty or 'Faculty' }}
+                </p>
+            </div>
+
+            <!-- Session Actions -->
+            <div class="flex items-center gap-sm flex-wrap">
+                <button type="button" class="btn btn-secondary btn-sm" id="soundToggleBtn" onclick="toggleAudioFeedback()">
+                    🔊 Sound ON
+                </button>
+                <a href="/api/export/session/{{ session.id }}/excel" class="btn btn-secondary btn-sm" title="Download Excel Attendance Sheet">
+                    📊 Export Excel
+                </a>
+                <button type="button" class="btn btn-danger btn-sm" onclick="confirmEndSession()">
+                    ⏹ End Session
+                </button>
+                <a href="/sessions" class="btn btn-ghost btn-sm">Exit Cockpit</a>
+            </div>
+        </div>
+
+        <!-- Time & Scheduled details -->
+        <div class="live-time-strip mt-md pt-sm" style="border-top: 1px solid var(--border-subtle);">
+            <div class="flex items-center justify-between flex-wrap gap-sm text-sm">
+                <div>
+                    ⏰ Scheduled: <strong>{{ session.scheduled_start[11:16] }} - {{ session.scheduled_end[11:16] }}</strong>
+                    <span class="text-muted">({{ session.scheduled_start[:10] }})</span>
+                </div>
+                <div>
+                    🕒 Late Threshold: <strong>{{ session.late_threshold_min }} mins</strong>
+                </div>
+                <div>
+                    🖥️ PC Strategy: <strong>{{ session.pc_strategy | capitalize }}</strong>
+                    {% if session.pc_strategy == 'auto_sequential' %} ({{ session.pc_prefix }}##){% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Counters & Progress -->
+    <div class="stats-grid mb-lg" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        <div class="stat-card stat-card--success">
+            <div class="stat-label">Present</div>
+            <div class="stat-value" id="countPresent">{{ session.present_count }}</div>
+        </div>
+        <div class="stat-card stat-card--warning">
+            <div class="stat-label">Late</div>
+            <div class="stat-value" id="countLate" style="color: var(--accent-warning); background: none; -webkit-text-fill-color: var(--accent-warning);">{{ session.late_count }}</div>
+        </div>
+        <div class="stat-card" style="border-top: 3px solid var(--accent-info);">
+            <div class="stat-label">Pending / Unscanned</div>
+            <div class="stat-value" id="countPending" style="color: var(--accent-info); background: none; -webkit-text-fill-color: var(--accent-info);">{{ session.pending_count }}</div>
+        </div>
+        <div class="stat-card stat-card--primary">
+            <div class="stat-label">Total Expected</div>
+            <div class="stat-value" id="countTotal">{{ session.total_students }}</div>
+        </div>
+    </div>
+
+    <!-- Progress Meter -->
+    <div class="card mb-lg" style="padding: var(--space-md) var(--space-lg);">
+        <div class="flex items-center justify-between text-sm mb-xs">
+            <span class="font-bold">Attendance Progress</span>
+            <span id="attendancePctText" class="text-success font-bold">
+                {% if session.total_students > 0 %}
+                {{ ((session.present_count / session.total_students) * 100) | round | int }}%
+                {% else %}0%{% endif %}
+            </span>
+        </div>
+        <div class="meter-bar-track">
+            <div class="meter-bar-fill" id="meterBarFill" data-initial-pct="{{ ((session.present_count / session.total_students) * 100) | round | int if session.total_students > 0 else 0 }}"></div>
+        </div>
+    </div>
+
+    <!-- ── Barcode Scanner Cockpit Input ────────────────────────── -->
+    <div class="card scan-cockpit-card mb-xl" id="scannerCard">
+        <div class="flex items-center justify-between mb-sm">
+            <div class="flex items-center gap-sm">
+                <span class="scan-beacon"></span>
+                <strong style="font-size: 1.1rem;">Barcode Scanner & Rapid Entry</strong>
+            </div>
+            <span class="text-muted text-xs">Ready for USB Scanner or Keyboard Input</span>
+        </div>
+
+        <form id="sessionScanForm" autocomplete="off" onsubmit="handleSessionScan(event)">
+            <div class="scan-input-wrapper">
+                <input type="text" id="liveScanInput"
+                       class="form-input scan-input-box"
+                       placeholder="Scan barcode or type Roll Number..."
+                       autofocus required>
+                <button type="submit" class="btn btn-success scan-btn" id="scanSubmitBtn">
+                    ✓ Check In
+                </button>
+            </div>
+        </form>
+
+        <!-- Live Scan Feedback Flash Banner -->
+        <div id="scanFeedback" class="scan-feedback-banner hidden">
+            <div class="flex items-center gap-md">
+                <span id="feedbackIcon" style="font-size: 1.5rem;">✓</span>
+                <div>
+                    <div id="feedbackText" style="font-weight: 600; font-size: 1rem;"></div>
+                    <div id="feedbackSub" class="text-xs text-muted"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Live Student Roster ──────────────────────────────────── -->
+    <div class="card">
+        <div class="card-header flex-wrap gap-md">
+            <div>
+                <h3 class="card-title">👥 Class Roster</h3>
+                <span class="text-sm text-muted">Click any row to manually change status or edit PC</span>
+            </div>
+
+            <!-- Filter Pills -->
+            <div class="flex items-center gap-xs flex-wrap">
+                <button class="filter-pill active" onclick="filterRosterByStatus('ALL', this)">All (<span id="pillAllCount">{{ session.total_students }}</span>)</button>
+                <button class="filter-pill" onclick="filterRosterByStatus('PRESENT', this)">Present (<span id="pillPresentCount">{{ session.present_count }}</span>)</button>
+                <button class="filter-pill" onclick="filterRosterByStatus('PENDING', this)">Pending (<span id="pillPendingCount">{{ session.pending_count }}</span>)</button>
+                <button class="filter-pill" onclick="filterRosterByStatus('LATE', this)">Late (<span id="pillLateCount">{{ session.late_count }}</span>)</button>
+                <button class="filter-pill" onclick="filterRosterByStatus('ABSENT', this)">Absent (<span id="pillAbsentCount">{{ session.absent_count }}</span>)</button>
+                <input type="text" id="rosterSearchLive" class="form-input" placeholder="Filter roster..." style="max-width: 180px; padding: 0.35rem 0.75rem; font-size: 0.8rem;" oninput="searchLiveRoster(this.value)">
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="data-table" id="liveRosterTable">
+                <thead>
+                    <tr>
+                        <th>Roll No</th>
+                        <th>Student Name</th>
+                        <th>Status</th>
+                        <th>PC Assigned</th>
+                        <th>Time In</th>
+                        <th>Type</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="liveRosterBody">
+                    {% for st in session.students %}
+                    <tr id="row-{{ st.roll_no }}" data-status="{{ st.status }}" data-roll="{{ st.roll_no }}" data-name="{{ st.student_name }}">
+                        <td><strong>{{ st.roll_no }}</strong></td>
+                        <td>{{ st.student_name or '—' }}</td>
+                        <td>
+                            {% if st.status == 'PRESENT' %}
+                            <span class="badge badge--in">PRESENT</span>
+                            {% elif st.status == 'LATE' %}
+                            <span class="badge" style="background: rgba(255, 171, 64, 0.15); color: var(--accent-warning);">LATE</span>
+                            {% elif st.status == 'ABSENT' %}
+                            <span class="badge badge--out">ABSENT</span>
+                            {% else %}
+                            <span class="badge" style="background: rgba(64, 196, 255, 0.15); color: var(--accent-info);">PENDING</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="pc-badge" id="pc-{{ st.roll_no }}">{{ st.pc_assigned or '—' }}</span>
+                        </td>
+                        <td>{{ st.actual_entry[11:16] if st.actual_entry else '—' }}</td>
+                        <td>
+                            <span class="text-xs text-muted">{{ st.scheduled_status }}</span>
+                        </td>
+                        <td>
+                            <div class="flex gap-xs">
+                                <button type="button" class="btn btn-ghost btn-sm text-success" title="Mark Present" onclick="manualStatus('{{ st.roll_no }}', 'PRESENT')">✓</button>
+                                <button type="button" class="btn btn-ghost btn-sm text-warning" title="Mark Late" onclick="manualStatus('{{ st.roll_no }}', 'LATE')">⏰</button>
+                                <button type="button" class="btn btn-ghost btn-sm text-danger" title="Mark Absent" onclick="manualStatus('{{ st.roll_no }}', 'ABSENT')">✕</button>
+                                <button type="button" class="btn btn-ghost btn-sm" title="Edit PC" onclick="editPcPrompt('{{ st.roll_no }}', '{{ st.pc_assigned }}')">💻</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% if not session.students %}
+                    <tr id="emptyRosterRow">
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="icon">👥</div>
+                                <p>No students enrolled in this session yet. Scan any card to add as walk-in!</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Session ID Context for JS -->
+<input type="hidden" id="currentSessionId" value="{{ session.id }}">
+<script id="initialSessionJson" type="application/json">
+{{ session | tojson | safe }}
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/session-live.js"></script>
+{% endblock %}

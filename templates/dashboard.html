@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Room Entry System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="admin-header">
+        <h1>📊 Dashboard</h1>
+        <div class="admin-actions">
+            <button class="btn btn-secondary btn-sm" onclick="refreshDashboard()">↻ Refresh</button>
+            <a href="/" class="btn btn-primary btn-sm">+ New Entry</a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card stat-card--primary">
+            <div class="stat-label">Currently Inside</div>
+            <div class="stat-value" id="statInside">{{ stats.currently_inside }}</div>
+        </div>
+        <div class="stat-card stat-card--success">
+            <div class="stat-label">Today's Visits</div>
+            <div class="stat-value" id="statToday">{{ stats.today_visits }}</div>
+        </div>
+    </div>
+
+    <!-- Quick Entry -->
+    <div class="card mb-lg">
+        <div class="flex items-center gap-md">
+            <input type="text" id="quickRollNo" class="form-input"
+                   placeholder="Quick scan / enter roll number..."
+                   style="max-width: 300px;">
+            <button class="btn btn-primary btn-sm" onclick="quickEntry()">Entry</button>
+            <button class="btn btn-secondary btn-sm" onclick="quickExit()">Exit</button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-lg" style="padding: var(--space-md) var(--space-lg);">
+        <div class="flex items-center gap-md" style="flex-wrap: wrap;">
+            <div class="form-group" style="margin-bottom: 0; flex: 0 0 auto;">
+                <label style="margin-bottom: 2px;">Filter</label>
+            </div>
+            <input type="text" id="filterRollNo" class="form-input" placeholder="Roll No..."
+                   style="max-width: 180px;">
+            <input type="date" id="filterDateFrom" class="form-input" style="max-width: 160px;">
+            <span class="text-muted">to</span>
+            <input type="date" id="filterDateTo" class="form-input" style="max-width: 160px;">
+            <button class="btn btn-secondary btn-sm" onclick="applyFilters()">Apply</button>
+            <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Clear</button>
+        </div>
+    </div>
+
+    <!-- Records Table -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Recent Records</h2>
+            <span class="text-sm text-muted" id="totalRecords">{{ pagination.total }} total</span>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="data-table" id="recordsTable">
+                <thead>
+                    <tr>
+                        <th>Roll No</th>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Entry</th>
+                        <th>Exit</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="recordsBody">
+                    {% for record in records %}
+                    <tr class="clickable" data-record-id="{{ record.id }}">
+                        <td><strong>{{ record.roll_no }}</strong></td>
+                        <td>{{ record.student_name or '—' }}</td>
+                        <td>{{ record.entry_time[:10] if record.entry_time else '—' }}</td>
+                        <td>{{ record.entry_time[11:16] if record.entry_time else '—' }}</td>
+                        <td>{{ record.exit_time[11:16] if record.exit_time else '—' }}</td>
+                        <td>{{ (record.duration_minutes | string) + ' min' if record.duration_minutes else '—' }}</td>
+                        <td>
+                            {% if record.status == 'IN' %}
+                                <span class="badge badge--in">IN</span>
+                            {% else %}
+                                <span class="badge badge--out">OUT</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-ghost btn-sm" data-toggle-detail="{{ record.id }}">▾</button>
+                        </td>
+                    </tr>
+                    {% if record.custom_fields %}
+                    <tr class="detail-row hidden" id="detail-{{ record.id }}">
+                        <td colspan="8">
+                            <div class="detail-panel">
+                                <div class="detail-grid">
+                                    {% for label, value in record.custom_fields.items() %}
+                                    <div class="detail-item">
+                                        <span class="detail-label">{{ label }}</span>
+                                        <span class="detail-value">{{ value or '—' }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if not records %}
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <div class="icon">📋</div>
+                                <p>No records yet. Create an entry to get started.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

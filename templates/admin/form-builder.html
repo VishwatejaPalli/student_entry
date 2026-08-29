@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}Form Builder — Room Entry System{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    {% if mode == 'list' %}
+    <!-- ── Forms List ────────────────────────────────────── -->
+    <div class="admin-header">
+        <h1>🛠️ Form Builder</h1>
+        <div class="admin-actions">
+            <a href="/admin/forms/builder" class="btn btn-primary">+ New Form</a>
+        </div>
+    </div>
+
+    {% if forms %}
+    <div class="field-list">
+        {% for f in forms %}
+        <div class="field-item">
+            <div class="field-item-header">
+                <div>
+                    <span class="field-item-label">{{ f.name }}</span>
+                    {% if f.active %}
+                        <span class="badge badge--active" style="margin-left: 8px;">Active</span>
+                    {% endif %}
+                </div>
+                <div class="field-item-actions">
+                    {% if not f.active %}
+                    <button class="btn btn-ghost btn-sm" data-activate-form="{{ f.id }}">Set Active</button>
+                    {% endif %}
+                    <a href="/admin/forms/builder/{{ f.id }}" class="btn btn-secondary btn-sm">Edit</a>
+                    <a href="/admin/forms/preview/{{ f.id }}" class="btn btn-ghost btn-sm">Preview</a>
+                </div>
+            </div>
+            <div class="field-item-meta">
+                {{ f.description or 'No description' }} · v{{ f.version }} · Updated {{ f.updated_at[:10] }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="empty-state">
+            <div class="icon">🛠️</div>
+            <p>No forms yet. Create one to get started.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% elif mode == 'builder' %}
+    <!-- ── Form Builder ──────────────────────────────────── -->
+    <div class="admin-header">
+        <h1>🛠️ {% if form %}Edit Form{% else %}New Form{% endif %}</h1>
+        <div class="admin-actions">
+            <a href="/admin/forms" class="btn btn-ghost">← Back</a>
+            {% if form %}
+            <a href="/admin/forms/preview/{{ form.id }}" class="btn btn-secondary btn-sm" target="_blank">Preview</a>
+            {% endif %}
+            <button class="btn btn-primary" id="saveFormBtn" onclick="saveForm()">💾 Save Form</button>
+        </div>
+    </div>
+
+    <!-- Form Metadata -->
+    <div class="card mb-lg">
+        <div class="form-group">
+            <label for="formName">Form Name</label>
+            <input type="text" id="formName" class="form-input"
+                   value="{{ form.name if form else '' }}"
+                   placeholder="e.g. Laboratory Entry Form">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="formDesc">Description</label>
+            <input type="text" id="formDesc" class="form-input"
+                   value="{{ form.description if form else '' }}"
+                   placeholder="Brief description of this form">
+        </div>
+    </div>
+
+    <div class="builder-layout">
+        <!-- Sidebar: Components -->
+        <div class="builder-sidebar">
+            <div class="card">
+                <h3 style="margin-bottom: var(--space-md); font-size: 0.9rem;">Components</h3>
+
+                <div class="component-section-title">Layout</div>
+                <div class="component-list">
+                    <div class="component-item" onclick="addField('heading')">
+                        <span class="icon">H</span> Heading
+                    </div>
+                    <div class="component-item" onclick="addField('paragraph')">
+                        <span class="icon">¶</span> Paragraph
+                    </div>
+                    <div class="component-item" onclick="addField('divider')">
+                        <span class="icon">—</span> Divider
+                    </div>
+                </div>
+
+                <div class="component-section-title">Input</div>
+                <div class="component-list">
+                    <div class="component-item" onclick="addField('text')">
+                        <span class="icon">Aa</span> Text
+                    </div>
+                    <div class="component-item" onclick="addField('number')">
+                        <span class="icon">#</span> Number
+                    </div>
+                    <div class="component-item" onclick="addField('textarea')">
+                        <span class="icon">📝</span> Text Area
+                    </div>
+                </div>
+
+                <div class="component-section-title">Selection</div>
+                <div class="component-list">
+                    <div class="component-item" onclick="addField('dropdown')">
+                        <span class="icon">▼</span> Dropdown
+                    </div>
+                    <div class="component-item" onclick="addField('radio')">
+                        <span class="icon">◉</span> Radio
+                    </div>
+                    <div class="component-item" onclick="addField('checkbox')">
+                        <span class="icon">☑</span> Checkbox
+                    </div>
+                </div>
+
+                <div class="component-section-title">Date / Time</div>
+                <div class="component-list">
+                    <div class="component-item" onclick="addField('date')">
+                        <span class="icon">📅</span> Date
+                    </div>
+                    <div class="component-item" onclick="addField('time')">
+                        <span class="icon">⏰</span> Time
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main: Field List -->
+        <div class="builder-main">
+            <div class="field-list" id="fieldList">
+                {% if form and fields %}
+                    {% for field in fields %}
+                    <div class="field-item" data-field-id="{{ field.id }}" data-field-type="{{ field.field_type }}">
+                        <div class="field-item-header">
+                            <div>
+                                <span class="field-item-type">{{ field.field_type }}</span>
+                                {% if field.required %}
+                                    <span class="text-danger text-sm" style="margin-left: 4px;">required</span>
+                                {% endif %}
+                            </div>
+                            <div class="field-item-actions">
+                                <button class="btn btn-ghost btn-sm" onclick="moveField(this, 'up')" title="Move up">↑</button>
+                                <button class="btn btn-ghost btn-sm" onclick="moveField(this, 'down')" title="Move down">↓</button>
+                                <button class="btn btn-ghost btn-sm" onclick="toggleFieldEditor(this)" title="Edit">✏️</button>
+                                <button class="btn btn-ghost btn-sm text-danger" onclick="deleteField(this)" title="Delete">✕</button>
+                            </div>
+                        </div>
+                        <div class="field-item-label">{{ field.label or field.configuration.get('text', field.field_type | capitalize) }}</div>
+                        <div class="field-item-meta">
+                            {% if field.field_name %}name: {{ field.field_name }}{% endif %}
+                            {% if field.field_type in ['dropdown', 'radio'] and field.configuration.get('options') %}
+                                · {{ field.configuration.options | length }} options
+                            {% endif %}
+                        </div>
+
+                        <!-- Hidden editor (toggled) -->
+                        <div class="field-editor hidden">
+                            {% if field.field_type not in ['heading', 'paragraph', 'divider'] %}
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Field Name (code)</label>
+                                    <input type="text" class="form-input field-edit-name"
+                                           value="{{ field.field_name }}" placeholder="e.g. purpose">
+                                </div>
+                                <div class="form-group">
+                                    <label>Label</label>
+                                    <input type="text" class="form-input field-edit-label"
+                                           value="{{ field.label }}" placeholder="e.g. Purpose">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" class="field-edit-required"
+                                           {{ 'checked' if field.required else '' }}>
+                                    <span>Required</span>
+                                </label>
+                            </div>
+                            {% endif %}
+
+                            {% if field.field_type == 'heading' %}
+                            <div class="form-group">
+                                <label>Heading Text</label>
+                                <input type="text" class="form-input field-edit-heading-text"
+                                       value="{{ field.configuration.get('text', '') }}">
+                            </div>
+                            <div class="form-group">
+                                <label>Level</label>
+                                <select class="form-select field-edit-heading-level">
+                                    <option value="1" {{ 'selected' if field.configuration.get('level') == 1 else '' }}>H1</option>
+                                    <option value="2" {{ 'selected' if field.configuration.get('level', 2) == 2 else '' }}>H2</option>
+                                    <option value="3" {{ 'selected' if field.configuration.get('level') == 3 else '' }}>H3</option>
+                                    <option value="4" {{ 'selected' if field.configuration.get('level') == 4 else '' }}>H4</option>
+                                </select>
+                            </div>
+                            {% endif %}
+
+                            {% if field.field_type == 'paragraph' %}
+                            <div class="form-group">
+                                <label>Text</label>
+                                <textarea class="form-textarea field-edit-para-text" rows="3">{{ field.configuration.get('text', '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Style</label>
+                                <select class="form-select field-edit-para-style">
+                                    <option value="info" {{ 'selected' if field.configuration.get('style', 'info') == 'info' else '' }}>Info</option>
+                                    <option value="warning" {{ 'selected' if field.configuration.get('style') == 'warning' else '' }}>Warning</option>
+                                </select>
+                            </div>
+                            {% endif %}
+
+                            {% if field.field_type in ['dropdown', 'radio'] %}
+                            <div class="form-group">
+                                <label>Options (one per line)</label>
+                                <textarea class="form-textarea field-edit-options" rows="5">{{ field.configuration.get('options', []) | join('\n') }}</textarea>
+                            </div>
+                            {% endif %}
+
+                            {% if field.field_type in ['text', 'textarea'] %}
+                            <div class="form-group">
+                                <label>Placeholder</label>
+                                <input type="text" class="form-input field-edit-placeholder"
+                                       value="{{ field.configuration.get('placeholder', '') }}">
+                            </div>
+                            {% endif %}
+
+                            {% if field.field_type == 'checkbox' %}
+                            <div class="form-group">
+                                <label>Checkbox Label</label>
+                                <input type="text" class="form-input field-edit-cb-label"
+                                       value="{{ field.configuration.get('label', field.label) }}">
+                            </div>
+                            {% endif %}
+
+                            <div class="flex gap-sm">
+                                <button class="btn btn-primary btn-sm" onclick="saveField(this)">Save Changes</button>
+                                <button class="btn btn-ghost btn-sm" onclick="toggleFieldEditor(this)">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state" id="emptyFields">
+                        <div class="icon">🧩</div>
+                        <p>Add fields from the components panel on the left.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Hidden form data -->
+<input type="hidden" id="formId" value="{{ form.id if form else '' }}">
+<input type="hidden" id="fieldsData" value='{{ fields | tojson if fields else "[]" }}'>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/form-builder.js"></script>
+{% endblock %}

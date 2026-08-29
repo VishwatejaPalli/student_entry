@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Preview — {{ form.name }} — Room Entry System{% endblock %}
+
+{% block content %}
+<div class="container container--narrow">
+    <div class="admin-header">
+        <h1>👁️ Form Preview</h1>
+        <div class="admin-actions">
+            <a href="/admin/forms/builder/{{ form.id }}" class="btn btn-secondary btn-sm">← Edit</a>
+        </div>
+    </div>
+
+    <div class="card entry-card" style="max-width: 100%;">
+        <div class="card-header" style="flex-direction: column; align-items: center; text-align: center; border-bottom: none;">
+            <div class="entry-icon">📋</div>
+            <h2>{{ form.name }}</h2>
+            <p class="entry-subtitle">Preview Mode — No data is submitted</p>
+        </div>
+
+        <div class="form-group">
+            <label>Roll Number</label>
+            <input type="text" class="form-input form-input--large" value="24885A0407" disabled>
+        </div>
+
+        {{ form_html | safe }}
+
+        <div class="mt-lg">
+            <button class="btn btn-success btn-lg btn-block" disabled>
+                ✓ Record Entry (Preview)
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+<nav class="navbar">
+    <div class="container">
+        <a href="/" class="navbar-brand">
+            <span class="brand-icon">🏠</span>
+            Room Entry
+        </a>
+
+        <button class="navbar-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+
+        <ul class="navbar-links" id="navLinks">
+            <li><a href="/" class="{% if request.url.path == '/' %}active{% endif %}">📋 Entry</a></li>
+            <li><a href="/sessions" class="{% if '/sessions' in request.url.path %}active{% endif %}">🏫 Class Sessions</a></li>
+            <li><a href="/dashboard" class="{% if request.url.path == '/dashboard' %}active{% endif %}">📊 Dashboard</a></li>
+            <li><a href="/admin/forms" class="{% if '/admin/forms' in request.url.path %}active{% endif %}">🛠️ Forms</a></li>
+            <li><a href="/admin/students" class="{% if '/admin/students' in request.url.path %}active{% endif %}">👥 Students</a></li>
+            <li><a href="/admin/export" class="{% if '/admin/export' in request.url.path %}active{% endif %}">📥 Export</a></li>
+        </ul>
+    </div>
+</nav>
+
+<script>
+    document.getElementById('navToggle')?.addEventListener('click', () => {
+        document.getElementById('navLinks')?.classList.toggle('open');
+    });
+</script>

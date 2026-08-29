@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Students — Room Entry System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="admin-header">
+        <h1>👥 Students <span class="text-muted text-sm">({{ total }})</span></h1>
+        <div class="admin-actions">
+            <button class="btn btn-secondary btn-sm" onclick="showImportModal()">📤 Import CSV/Excel</button>
+            <button class="btn btn-primary btn-sm" onclick="showAddModal()">+ Add Student</button>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="card mb-lg" style="padding: var(--space-md) var(--space-lg);">
+        <div class="flex items-center gap-md">
+            <input type="text" id="studentSearch" class="form-input"
+                   placeholder="Search by roll number or name..." style="max-width: 350px;"
+                   oninput="searchStudents(this.value)">
+        </div>
+    </div>
+
+    <!-- Students Table -->
+    <div class="card">
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Roll No</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Section</th>
+                        <th>Year</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="studentsBody">
+                    {% for s in students %}
+                    <tr data-student-id="{{ s.id }}">
+                        <td><strong>{{ s.roll_no }}</strong></td>
+                        <td>{{ s.name or '—' }}</td>
+                        <td>{{ s.department or '—' }}</td>
+                        <td>{{ s.section or '—' }}</td>
+                        <td>{{ s.year or '—' }}</td>
+                        <td>
+                            <button class="btn btn-ghost btn-sm"
+                                    data-edit-student="{{ s.id }}"
+                                    data-roll="{{ s.roll_no }}"
+                                    data-name="{{ s.name }}"
+                                    data-dept="{{ s.department }}"
+                                    data-section="{{ s.section }}"
+                                    data-year="{{ s.year }}">
+                                ✏️
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% if not students %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="icon">👥</div>
+                                <p>No students yet. Add one or import from a file.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Student Modal -->
+<div class="modal-overlay" id="studentModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="studentModalTitle">Add Student</h3>
+            <button class="btn btn-ghost" onclick="closeModal('studentModal')">✕</button>
+        </div>
+        <form id="studentForm">
+            <input type="hidden" id="editStudentId" value="">
+            <div class="form-group">
+                <label for="sRollNo">Roll Number</label>
+                <input type="text" id="sRollNo" class="form-input" placeholder="e.g. 24885A0407" required>
+            </div>
+            <div class="form-group">
+                <label for="sName">Name</label>
+                <input type="text" id="sName" class="form-input" placeholder="Student Name">
+            </div>
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+                <div class="form-group">
+                    <label for="sDept">Department</label>
+                    <input type="text" id="sDept" class="form-input" placeholder="e.g. CSE">
+                </div>
+                <div class="form-group">
+                    <label for="sSection">Section</label>
+                    <input type="text" id="sSection" class="form-input" placeholder="e.g. A">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="sYear">Year</label>
+                <input type="text" id="sYear" class="form-input" placeholder="e.g. 3">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('studentModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="studentSubmitBtn">Add Student</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="importModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Import Students</h3>
+            <button class="btn btn-ghost" onclick="closeModal('importModal')">✕</button>
+        </div>
+        <div>
+            <p class="text-muted text-sm mb-md">
+                Upload a CSV or Excel file with columns: <strong>roll_no</strong>, name, department, section, year.
+            </p>
+            <div class="form-group">
+                <input type="file" id="importFile" accept=".csv,.xlsx,.xls" class="form-input">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal('importModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="importStudents()">Upload & Import</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin.js"></script>
+{% endblock %}

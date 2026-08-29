@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Export — Room Entry System{% endblock %}
+
+{% block content %}
+<div class="container container--narrow">
+    <div class="admin-header">
+        <h1>📥 Export Records</h1>
+    </div>
+
+    <div class="card">
+        <div class="card-header" style="border-bottom: none;">
+            <h3 class="card-title">Export Options</h3>
+        </div>
+
+        <div class="form-group">
+            <label for="exportForm">Form</label>
+            <select id="exportForm" class="form-select">
+                <option value="">Active Form</option>
+                {% for f in forms %}
+                <option value="{{ f.id }}">{{ f.name }}{% if f.active %} (Active){% endif %}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+            <div class="form-group">
+                <label for="exportFrom">From Date</label>
+                <input type="date" id="exportFrom" class="form-input">
+            </div>
+            <div class="form-group">
+                <label for="exportTo">To Date</label>
+                <input type="date" id="exportTo" class="form-input">
+            </div>
+        </div>
+
+        <div class="flex gap-md mt-lg">
+            <button class="btn btn-primary btn-lg" onclick="downloadExport('excel')" style="flex: 1;">
+                📊 Download Excel
+            </button>
+            <button class="btn btn-secondary btn-lg" onclick="downloadExport('csv')" style="flex: 1;">
+                📄 Download CSV
+            </button>
+        </div>
+
+        <p class="text-muted text-sm mt-md text-center">
+            Exports include all system fields and custom form fields.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function downloadExport(format) {
+    const formId = document.getElementById('exportForm').value;
+    const dateFrom = document.getElementById('exportFrom').value;
+    const dateTo = document.getElementById('exportTo').value;
+
+    let url = `/api/export/${format}?`;
+    const params = [];
+    if (formId) params.push(`form_id=${formId}`);
+    if (dateFrom) params.push(`date_from=${dateFrom}`);
+    if (dateTo) params.push(`date_to=${dateTo}`);
+    url += params.join('&');
+
+    window.location.href = url;
+    showToast('Download started', 'success');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Entry — Room Entry System{% endblock %}
+
+{% block content %}
+<div class="container container--narrow">
+    <!-- Mode Switcher -->
+    <div class="mode-switch-wrapper mb-lg">
+        <div class="mode-switch">
+            <a href="/" class="mode-switch-btn active">👤 Individual Entry</a>
+            <a href="/sessions" class="mode-switch-btn">🏫 Class Sessions & Bulk</a>
+        </div>
+    </div>
+
+    <div class="entry-container" style="min-height: auto; padding: 0;">
+        <div class="card entry-card" id="entryCard">
+
+            {% if not show_form %}
+            <!-- ── Step 1: Roll Number Input ─────────────────── -->
+            <div id="stepIdentify">
+                <div class="card-header">
+                    <div class="entry-icon">📋</div>
+                    <h1>Room Access</h1>
+                    <p class="entry-subtitle">Scan barcode or enter roll number to Enter or Exit</p>
+                </div>
+
+                <form id="identifyForm" autocomplete="off">
+                    <div class="form-group">
+                        <label for="rollNoInput">Roll Number</label>
+                        <input type="text" id="rollNoInput" name="roll_no"
+                               class="form-input form-input--large"
+                               placeholder="e.g. 24885A0407"
+                               autofocus required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg btn-block" id="continueBtn">
+                        Continue →
+                    </button>
+                </form>
+            </div>
+
+            <!-- ── Step Exit: Rich Exit Message Screen ───────── -->
+            <div id="stepExitMessage" class="hidden text-center">
+                <div class="card-header" style="flex-direction: column; align-items: center; border-bottom: none;">
+                    <div class="entry-icon" style="background: var(--gradient-success);">👋</div>
+                    <h1 id="exitGreeting">Goodbye!</h1>
+                    <p class="entry-subtitle text-success" id="exitSubMessage">Exit recorded successfully</p>
+                </div>
+
+                <div class="card card--glass mb-lg" style="padding: var(--space-lg); text-align: left;">
+                    <div class="detail-grid" style="grid-template-columns: 1fr 1fr;">
+                        <div class="detail-item">
+                            <span class="detail-label">Student</span>
+                            <span class="detail-value" id="exitStudentName">—</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Roll Number</span>
+                            <span class="detail-value" id="exitRollNo">—</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Entry Time</span>
+                            <span class="detail-value" id="exitEntryTime">—</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Exit Time</span>
+                            <span class="detail-value" id="exitTime">—</span>
+                        </div>
+                    </div>
+                    <div class="mt-md pt-sm text-center" style="border-top: 1px solid var(--border-subtle);">
+                        <span class="detail-label">Time Spent in Lab</span>
+                        <div class="stat-value" id="exitDuration" style="font-size: 1.5rem; background: var(--gradient-success); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">0 min</div>
+                    </div>
+                </div>
+
+                <div class="text-sm text-muted mb-md">
+                    Ready for next student in <span id="exitCountdown" class="font-bold text-primary">4</span>s...
+                </div>
+                <button type="button" class="btn btn-secondary btn-block" onclick="resetToScanInput()">
+                    ← Scan Next Student Now
+                </button>
+            </div>
+
+            {% else %}
+            <!-- ── Step 2: Dynamic Form ──────────────────────── -->
+            <div id="stepForm">
+                <div class="card-header">
+                    <div class="entry-icon">📝</div>
+                    <h1>{{ form.name }}</h1>
+                    <p class="entry-subtitle">
+                        {% if student.student_name %}
+                            {{ student.student_name }} — {{ roll_no }}
+                        {% else %}
+                            {{ roll_no }}
+                        {% endif %}
+                    </p>
+                </div>
+
+                {% if student.is_inside %}
+                <div class="entry-status entry-status--inside">
+                    <p class="status-text">⚡ You are currently marked as INSIDE</p>
+                    <p class="text-sm text-muted mt-sm">Submitting will record your exit first, then create a new entry.</p>
+                </div>
+                {% endif %}
+
+                <form id="entryForm" autocomplete="off">
+                    <input type="hidden" name="roll_no" value="{{ roll_no }}">
+
+                    {{ form_html | safe }}
+
+                    <div class="mt-lg">
+                        <button type="submit" class="btn btn-success btn-lg btn-block" id="submitEntryBtn">
+                            ✓ Record Entry
+                        </button>
+                    </div>
+                    <div class="mt-md text-center">
+                        <a href="/" class="btn btn-ghost">← Back</a>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/entry.js"></script>
+{% endblock %}
