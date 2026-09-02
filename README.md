@@ -6,9 +6,9 @@
 [![Raspberry Pi](https://img.shields.io/badge/Hardware-Raspberry%20Pi%20Ready-C51A4A.svg)](https://www.raspberrypi.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A lightweight, configurable, hardware-ready **Room Entry & Laboratory Data Management Platform** designed for academic labs, research centers, computer labs, and smart facilities. 
+A lightweight, hardware-ready **Room Entry & Laboratory Data Management Platform** designed for academic laboratories, college departments, research centers, and smart facilities. 
 
-Includes support for **Individual Walk-in Entry**, **Live Class Session Cockpits**, **Dynamic Form Builder (Zero Code)**, **Barcode Scanner autofocus with Web Audio chimes**, **Smart PC Auto-Assignment**, and **Attendance Excel Exports**.
+Includes support for **Individual Walk-in Kiosk Entry**, **Live Class Session Scanner Cockpits**, **Semester Batch Division**, **Dynamic Form Builder (Zero Code)**, **Solid Material Symbols UI**, **Formatted Master Excel Exports**, and a **Password-Protected Year-End Data Purge Center**.
 
 ---
 
@@ -54,38 +54,93 @@ The installer automatically:
                       ▼
           ┌───────────┼───────────┐
           ▼           ▼           ▼
-      Dashboard    Analytics    Excel Sheets
+      Dashboard    Analytics    Master Excel Sheets
 ```
 
-### 1. 👤 Individual Entry & Exit Screen
-* **Barcode / Manual Roll Input**: Quick input with scanner autofocus.
-* **Dynamic Form Rendering**: Dynamically asks custom questions (Purpose, PC Number, Project, Remarks) configured by the admin.
-* **Personalized Exit Message Screen**: When a student leaves, displays student name, exact In/Out timestamps, total duration spent in the lab (`2h 15m`), and an automatic 4-second countdown before resetting for the next student.
+### 1. 👤 Individual Entry & Exit Kiosk
+* **Barcode / Manual Roll Input**: High-speed scanner autofocus for instant check-in.
+* **Dynamic Form Rendering**: Dynamically asks custom questions (Purpose, PC Number, Project, Remarks) configured by the admin without code changes.
+* **Personalized Exit Screen**: Displays student name, exact In/Out timestamps, total duration spent in the lab (`2h 15m`), and an automatic 3-second countdown before resetting.
 
 ### 2. ⚡ Live Class Session Cockpit
 * **Designed for Lab Classes**: Created for 30–60 student laboratory batches (e.g. *ECE-A*, *VLSI Lab*, *14:00–16:00*).
 * **High-Speed Scanner Input**: Permanent autofocus recovery so USB barcode scanner keystrokes are never lost.
-* **Web Audio Synthesizer**: Pleasant harmonic two-tone chime for on-time arrival, warning sound for late entry, and buzzer for unregistered cards.
-* **Smart PC Auto-Assignment**: Automatically assigns `PC-01`, `PC-02`... in the order students arrive and scan.
-* **Single-Click "End Session"**: Automatically marks all unscanned students as `ABSENT` and calculates duration for all attendees.
+* **Web Audio Synthesizer**: Harmonic chime for on-time arrival, warning tone for late entry, and buzzer for errors.
+* **Smart PC Auto-Assignment**: Automatically assigns `PC-01`, `PC-02`... sequentially as students scan.
+* **Single-Click "End Session"**: Automatically marks all unscanned students as `ABSENT` and calculates durations.
 
-### 3. 📋 3-Way Student Selection for Classes
-* **Class / Section Roster**: Select from pre-enrolled classes (`ECE-A`, `CSE-B`) with checkboxes and *Select All / Deselect All*.
-* **Drag & Drop Excel / CSV Dropzone**: Upload `.xlsx` or `.csv` files to auto-parse roll numbers with duplicate detection.
-* **Multiline Paste Box**: Paste roll numbers separated by newlines, commas, or spaces.
+### 3. 📋 3-Way Student Selection & Semester Batch Allocator
+* **Class Roster Checkbox Grid**: Select from pre-enrolled classes with checkboxes and *Select All / Deselect All*.
+* **Drag & Drop Excel / CSV Dropzone**: Upload `.xlsx` or `.csv` files to auto-parse roll numbers.
+* **Multiline Paste Box**: Paste roll numbers separated by newlines, commas, or spaces (unlisted students are automatically registered in the directory).
+* **Semester Batch Allocator**: Automatically divides class cohorts into $N$ equal lab batches (e.g., `ECE-A` into `A1, A2` or `Batch 1, Batch 2`) directly in the database.
 
-### 4. 🛠️ Dynamic Form Builder (Zero Code)
-* Create, customize, and reorder fields without editing source code:
-  * Layout: Headings, Info Paragraphs, Dividers.
-  * Inputs: Text, Number, Textarea, Date, Time.
-  * Selectors: Dropdowns, Radio buttons, Checkboxes.
-* Multiple forms stored with versioning; toggle active form with 1 click.
-* Uses **Entity-Attribute-Value (EAV)** SQLite schema so adding fields never requires database migrations.
+### 4. 📊 Master Excel Spreadsheet Exports
+* **Master Student Directory Excel (`/api/export/students/excel`)**: Complete formatted student roster with index, roll number, full name, department, section, batch, year, status, and registered date.
+* **Master Entry Log Excel (`/api/export/excel`)**: Comprehensive activity logs containing roll number, student name, department, section, batch, session name/type, date, entry time, exit time, duration, and custom form question responses.
+* **Session Attendance Excel (`/api/export/session/{id}/excel`)**: Color-coded attendance sheets with PC numbers and status.
 
-### 5. 📊 Live Dashboard & Formatted Excel Export
-* **Live Occupancy Stats**: Real-time count of currently present students and total daily visits.
-* **Class Attendance Sheets**: Export styled Excel reports with Faculty, Subject, Scheduled vs Actual In/Out times, Durations, and status color codes (`PRESENT`, `LATE`, `ABSENT`).
-* **Custom Filter Exports**: Date range, form-based, or class-based exports.
+### 5. 🗑️ Password-Protected Year-End Data Reset Center
+Easily clear or reset the database for a new academic year or semester in one click:
+* **Option 1: Clear Master Student Directory & Records**: Wipes the student list for clean incoming batch imports.
+* **Option 2: Clear Activity Logs & Class Sessions Only**: Clears attendance logs, keeping students intact for the next semester.
+* **Option 3: Complete Fresh Reset (Wipe All)**: Clears all students, records, and sessions.
+* **Direct Excel Download Shortcuts**: Download fresh copies of your Master Student Excel and Master Entry Logs Excel right before wiping.
+
+---
+
+## 🔒 Admin Password for Data Reset: How & Where to Change It
+
+The Data Clear / System Reset feature is protected by an **Admin Password** to prevent accidental or unauthorized data wipes.
+
+* **Default Password**: `admin`
+
+### How to Change the Admin Password:
+
+You can change the admin password using any of the following 3 methods:
+
+#### Method 1: Environment Variable (Recommended for Local / Server)
+Set the `ADMIN_PASSWORD` environment variable before starting the application:
+
+```bash
+export ADMIN_PASSWORD="your_new_secure_password"
+```
+
+Or create a `.env` file in the project root:
+```ini
+ADMIN_PASSWORD=your_new_secure_password
+```
+
+#### Method 2: In the Systemd Service File (For Raspberry Pi / Production Linux)
+If running as a background system service installed with `install.sh`:
+
+1. Edit the service file:
+   ```bash
+   sudo nano /etc/systemd/system/student-entry.service
+   ```
+2. Add or update `Environment="ADMIN_PASSWORD=your_new_secure_password"` under the `[Service]` section:
+   ```ini
+   [Service]
+   Type=simple
+   User=vishwa
+   WorkingDirectory=/home/vishwa/code/student_entry
+   Environment="ADMIN_PASSWORD=your_new_secure_password"
+   ExecStart=/home/vishwa/code/student_entry/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+   Restart=always
+   ```
+3. Reload systemd and restart the service:
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl restart student-entry
+   ```
+
+#### Method 3: In Python Code (`routers/students.py`)
+You can change the fallback default in [routers/students.py](file:///home/vishwa/code/student_entry/routers/students.py):
+
+```python
+# In routers/students.py (around line 380)
+admin_password = os.environ.get("ADMIN_PASSWORD", "your_custom_password_here")
+```
 
 ---
 
@@ -140,49 +195,55 @@ To launch the entry screen automatically on boot without window frames:
 
 ```
 student_entry/
-├── main.py                     # FastAPI lifespan application entry point
-├── database.py                 # SQLite schema, EAV pattern & sample data seeding
-├── models.py                   # Pydantic request & response validation schemas
+├── main.py                     # FastAPI application & lifespan entry point
+├── database.py                 # SQLite schema, EAV pattern & seed data
+├── models.py                   # Pydantic validation schemas
 ├── install.sh                  # Turnkey 1-line Linux/Pi automated installer
 ├── uninstall.sh                # Clean uninstaller script
 │
 ├── services/
 │   ├── form_engine.py          # Dynamic HTML form generator & validator
 │   ├── entry_service.py        # Individual entry, exit & duration business logic
-│   ├── session_service.py      # Live class session engine & PC auto-assignment
-│   └── export_service.py       # OpenPyXL styled Excel & CSV report generator
+│   ├── session_service.py      # Live class session engine, batch allocator & PC assignment
+│   └── export_service.py       # Master Excel & CSV spreadsheet generator (OpenPyXL)
 │
 ├── routers/
-│   ├── entry.py                # Individual student scan / form submission routes
-│   ├── sessions.py             # Class sessions hub & live cockpit API
-│   ├── dashboard.py            # Live occupancy dashboard API
-│   ├── forms.py                # Admin Form Builder CRUD
-│   ├── students.py             # Student roster management & Excel import
-│   └── export.py               # Excel and CSV export endpoints
+│   ├── entry.py                # Individual student scan & dynamic form submission
+│   ├── sessions.py             # Class sessions hub, batch allocator & live cockpit API
+│   ├── dashboard.py            # Live occupancy dashboard & quick-scan API
+│   ├── forms.py                # Visual Form Builder CRUD
+│   ├── students.py             # Student directory, import & password-protected clear API
+│   └── export.py               # Master Excel and CSV export endpoints
 │
 ├── templates/
-│   ├── base.html               # Base layout with fonts, toasts, modals
+│   ├── base.html               # Base layout with Google Material Symbols & Anti-FOUC theme
 │   ├── entry.html              # Individual entry form & Exit message screen
 │   ├── dashboard.html          # Real-time room occupancy dashboard
 │   ├── sessions/
-│   │   ├── index.html          # Class sessions hub (3 selection modes)
-│   │   └── live.html           # High-speed barcode scanner cockpit
+│   │   ├── index.html          # Class sessions hub (3 selection modes & allocator)
+│   │   ├── live.html           # High-speed barcode scanner live cockpit
+│   │   └── settings.html       # Bulk presets & custom field settings
 │   └── admin/
-│       ├── form-builder.html   # Visual drag-and-drop form editor
+│       ├── form-builder.html   # Drag-and-drop form editor
 │       ├── form-preview.html   # Form test preview
-│       ├── students.html       # Student roster management table
-│       └── export.html         # Custom export filters
+│       ├── students.html       # Student roster management table & Clear Data modal
+│       └── export.html         # Master Excel export center & Year-End Reset card
 │
 └── static/
-    ├── css/style.css           # Premium dark-mode glassmorphic design system
+    ├── css/
+    │   ├── style.css           # Compiled glassmorphic design system
+    │   ├── base.css            # Typography & solid Material Symbols styles
+    │   ├── tokens.css          # Color variables & dark/light theme tokens
+    │   └── components/         # Modular buttons, cards, tables, scanner, modal styles
     └── js/
-        ├── app.js              # Shared toast, modal, API & time utilities
+        ├── app.js              # Shared toast, modal & API utilities
         ├── entry.js            # Barcode scanner input & Exit countdown timer
         ├── session-live.js     # Web Audio synth chime & permanent autofocus
-        ├── sessions.js         # Dropzone Excel parser & multi-mode selection
+        ├── sessions.js         # Dropzone Excel parser & batch allocator
+        ├── session-settings.js # Dynamic preset tags & custom session fields
         ├── form-builder.js     # Form field CRUD & reordering
         ├── dashboard.js        # Auto-refresh statistics & table filters
-        └── admin.js            # Student import & debounced search
+        └── admin.js            # Student import, search & password-protected clear data
 ```
 
 ---
