@@ -49,6 +49,20 @@ app.add_middleware(
 # Static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+from fastapi import Request
+from fastapi.responses import JSONResponse
+import logging
+import traceback
+
+# Global Exception Handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logging.error(f"Error on {request.method} {request.url.path}: {exc}\n{traceback.format_exc()}")
+    return JSONResponse(
+        status_code=500,
+        content={"error": str(exc), "detail": str(exc)},
+    )
+
 # Routers
 app.include_router(entry.router)
 app.include_router(dashboard.router)

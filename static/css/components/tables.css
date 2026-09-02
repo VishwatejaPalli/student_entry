@@ -1,0 +1,201 @@
+/* ═══════════════════════════════════════════════════════════════
+   Table, Badge, Pagination & Detail Panel Components
+   ═══════════════════════════════════════════════════════════════ */
+
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.data-table thead {
+    background: rgba(108, 99, 255, 0.08);
+}
+
+.data-table th {
+    padding: var(--space-md) var(--space-lg);
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.data-table td {
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.data-table tbody tr {
+    transition: background var(--transition-fast);
+}
+
+.data-table tbody tr:hover {
+    background: rgba(108, 99, 255, 0.05);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tbody tr.clickable {
+    cursor: pointer;
+}
+
+html[data-theme="light"] .data-table th {
+    background: var(--bg-card-hover);
+    color: var(--text-secondary);
+    border-bottom: 2px solid #e2e8f0;
+}
+
+html[data-theme="light"] .data-table td {
+    border-bottom: 1px solid #f1f5f9;
+    color: var(--text-primary);
+}
+
+html[data-theme="light"] .data-table tbody tr:hover {
+    background: var(--bg-card-hover);
+}
+
+/* ── Badges ──────────────────────────────────────────────────── */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.65rem;
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge--in {
+    background: rgba(0, 230, 118, 0.15);
+    color: var(--accent-success);
+    box-shadow: 0 0 8px rgba(0, 230, 118, 0.1);
+}
+
+.badge--out {
+    background: rgba(154, 154, 176, 0.15);
+    color: var(--text-muted);
+}
+
+.badge--active {
+    background: rgba(0, 230, 118, 0.15);
+    color: var(--accent-success);
+}
+
+.badge--inactive {
+    background: rgba(154, 154, 176, 0.15);
+    color: var(--text-muted);
+}
+
+.badge--batch {
+    background: rgba(0, 210, 255, 0.12);
+    border: 1px solid rgba(0, 210, 255, 0.3);
+    color: var(--accent-secondary);
+    font-weight: 700;
+    font-size: 0.72rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: var(--radius-sm);
+    letter-spacing: 0.02em;
+}
+
+html[data-theme="light"] .badge--batch {
+    background: rgba(0, 136, 204, 0.1);
+    border-color: rgba(0, 136, 204, 0.3);
+    color: var(--accent-info);
+}
+
+/* ── Pagination ──────────────────────────────────────────────── */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    margin-top: var(--space-xl);
+}
+
+.pagination button {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.pagination button:hover {
+    border-color: var(--border-accent);
+    color: var(--text-primary);
+}
+
+.pagination button.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: white;
+}
+
+.pagination-info {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0 var(--space-md);
+}
+
+/* ── Record Detail Panel ─────────────────────────────────────── */
+.detail-panel {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    margin-top: var(--space-sm);
+    border: 1px solid var(--border-subtle);
+    animation: expandIn 0.2s ease-out;
+}
+
+@keyframes expandIn {
+    from { opacity: 0; max-height: 0; }
+    to { opacity: 1; max-height: 500px; }
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-md);
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.detail-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.detail-value {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}

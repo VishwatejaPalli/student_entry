@@ -2,6 +2,44 @@
  * App.js — Shared utilities for the Room Entry System
  */
 
+// ── Theme Management (Segmented Switch) ─────────────────────────
+
+function setAppTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (document.body) {
+        document.body.setAttribute('data-theme', theme);
+    }
+    localStorage.setItem('theme', theme);
+
+    const lightBtn = document.getElementById('themeSegLight');
+    const darkBtn = document.getElementById('themeSegDark');
+    if (lightBtn && darkBtn) {
+        if (theme === 'light') {
+            lightBtn.classList.add('active');
+            darkBtn.classList.remove('active');
+        } else {
+            darkBtn.classList.add('active');
+            lightBtn.classList.remove('active');
+        }
+    }
+}
+
+function initTheme() {
+    const saved = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    if (document.body) {
+        document.body.setAttribute('data-theme', saved);
+    }
+    setAppTheme(saved);
+}
+
+// Run theme init immediately
+initTheme();
+document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
+});
+
+
 // ── Toast Notifications ─────────────────────────────────────────
 
 function showToast(message, type = 'info', duration = 4000) {
@@ -12,7 +50,7 @@ function showToast(message, type = 'info', duration = 4000) {
     toast.className = `toast toast--${type}`;
     toast.innerHTML = `
         <span class="toast-message">${message}</span>
-        <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
+        <button class="toast-close" onclick="this.parentElement.remove()" style="display: inline-flex; align-items: center; justify-content: center;"><span class="material-symbols-outlined" style="font-size: 1.1rem;">close</span></button>
     `;
     container.appendChild(toast);
 
@@ -38,10 +76,16 @@ async function apiCall(url, method = 'GET', body = null) {
 
     try {
         const response = await fetch(url, options);
-        const data = await response.json();
+        let data;
+        const text = await response.text();
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch {
+            data = { error: text || `HTTP ${response.status} ${response.statusText}` };
+        }
 
         if (!response.ok) {
-            throw new Error(data.error || data.detail || `HTTP ${response.status}`);
+            throw new Error(data.error || data.detail || data.message || `HTTP ${response.status}`);
         }
         return data;
     } catch (err) {
@@ -59,10 +103,16 @@ async function apiUpload(url, file) {
             method: 'POST',
             body: formData,
         });
-        const data = await response.json();
+        let data;
+        const text = await response.text();
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch {
+            data = { error: text || `HTTP ${response.status} ${response.statusText}` };
+        }
 
         if (!response.ok) {
-            throw new Error(data.error || data.detail || `HTTP ${response.status}`);
+            throw new Error(data.error || data.detail || data.message || `HTTP ${response.status}`);
         }
         return data;
     } catch (err) {
@@ -106,6 +156,8 @@ document.addEventListener('keydown', (e) => {
 // ── Date/Time Defaults ──────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
+
     // Auto-set date fields with data-default-today="true"
     document.querySelectorAll('[data-default-today="true"]').forEach(input => {
         if (!input.value) {

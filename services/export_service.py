@@ -24,6 +24,10 @@ except ImportError:
 SYSTEM_COLUMNS = [
     ("Roll No", "roll_no"),
     ("Student Name", "student_name"),
+    ("Department", "department"),
+    ("Section", "section"),
+    ("Batch", "batch"),
+    ("Type / Session", "session_name"),
     ("Date", "date"),
     ("Entry Time", "entry_time"),
     ("Exit Time", "exit_time"),
@@ -45,15 +49,14 @@ async def get_export_data(
         (headers, rows) where headers is a list of column names
         and rows is a list of lists of string values.
     """
-    # Get the form to export (active form if not specified)
+    # Get custom field definitions (for active form or specific form)
+    custom_fields = []
     if form_id is None:
         cursor = await db.execute("SELECT id FROM forms WHERE active = 1 LIMIT 1")
         row = await cursor.fetchone()
         if row:
             form_id = row["id"]
 
-    # Get custom field definitions
-    custom_fields = []
     if form_id:
         cursor = await db.execute(
             """SELECT id, field_name, label, field_type FROM form_fields
@@ -88,9 +91,15 @@ async def get_export_data(
         where = "WHERE " + " AND ".join(conditions)
 
     cursor = await db.execute(
-        f"""SELECT r.*, COALESCE(s.name, '') as student_name
+        f"""SELECT r.*,
+                   COALESCE(s.name, '') as student_name,
+                   COALESCE(s.department, '') as department,
+                   COALESCE(s.section, '') as section,
+                   COALESCE(s.batch, '') as batch,
+                   cs.session_name
             FROM records r
             LEFT JOIN students s ON r.roll_no = s.roll_no
+            LEFT JOIN class_sessions cs ON r.session_id = cs.id
             {where}
             ORDER BY r.entry_time DESC""",
         params,
@@ -122,10 +131,15 @@ async def get_export_data(
 
         duration = str(record["duration_minutes"]) if record["duration_minutes"] is not None else ""
         status = "IN" if record["exit_time"] is None else "OUT"
+        session_str = record["session_name"] if record["session_name"] else "Individual Entry"
 
         row = [
             record["roll_no"],
             record["student_name"],
+            record["department"] or "—",
+            record["section"] or "—",
+            record["batch"] or "—",
+            session_str,
             date_str,
             entry_str,
             exit_str,
@@ -361,5 +375,104 @@ async def export_session_excel(db: aiosqlite.Connection, session_id: int) -> byt
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
+    return output.getvalue()
+
+
+async def export_students_excel(db: aiosqlite.Connection) -> bytes:
+    """Export master student directory as styled Excel spreadsheet."""
+    cursor = await db.execute("""
+        SELECT roll_no, name, department, section, batch, year, active, created_at
+        FROM students
+        ORDER BY department, section, batch, roll_no
+    """)
+    rows = await cursor.fetchall()
+
+    if not HAS_OPENPYXL:
+        csv_data = await export_students_csv(db)
+        return csv_data.encode("utf-8")
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Student Directory"
+
+    header_font = Font(name="Inter", size=11, bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="1E1E3F", end_color="1E1E3F", fill_type="solid")
+    center_align = Alignment(horizontal="center", vertical="center")
+    left_align = Alignment(horizontal="left", vertical="center")
+    thin_border = Border(
+        left=Side(style="thin", color="E0E0E0"),
+        right=Side(style="thin", color="E0E0E0"),
+        top=Side(style="thin", color="E0E0E0"),
+        bottom=Side(style="thin", color="E0E0E0"),
+    )
+
+    headers = ["#", "Roll Number", "Full Name", "Department", "Section", "Batch", "Year", "Status", "Registered Date"]
+    for col_idx, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_idx, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_align if col_idx not in (2, 3) else left_align
+        cell.border = thin_border
+
+    data_font = Font(name="Inter", size=10)
+    for idx, r in enumerate(rows, 1):
+        row_vals = [
+            idx,
+            r["roll_no"],
+            r["name"] or "—",
+            r["department"] or "—",
+            r["section"] or "—",
+            r["batch"] or "—",
+            r["year"] or "—",
+            "Active" if r["active"] else "Inactive",
+            r["created_at"][:10] if r["created_at"] else "—",
+        ]
+        for col_idx, val in enumerate(row_vals, 1):
+            cell = ws.cell(row=idx + 1, column=col_idx, value=val)
+            cell.font = data_font
+            cell.border = thin_border
+            cell.alignment = center_align if col_idx not in (2, 3) else left_align
+
+    ws.column_dimensions["A"].width = 6
+    ws.column_dimensions["B"].width = 18
+    ws.column_dimensions["C"].width = 25
+    ws.column_dimensions["D"].width = 15
+    ws.column_dimensions["E"].width = 12
+    ws.column_dimensions["F"].width = 12
+    ws.column_dimensions["G"].width = 10
+    ws.column_dimensions["H"].width = 12
+    ws.column_dimensions["I"].width = 16
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output.getvalue()
+
+
+async def export_students_csv(db: aiosqlite.Connection) -> str:
+    """Export master student directory as CSV string."""
+    cursor = await db.execute("""
+        SELECT roll_no, name, department, section, batch, year, active, created_at
+        FROM students
+        ORDER BY department, section, batch, roll_no
+    """)
+    rows = await cursor.fetchall()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["roll_no", "name", "department", "section", "batch", "year", "status", "created_at"])
+
+    for r in rows:
+        writer.writerow([
+            r["roll_no"],
+            r["name"] or "",
+            r["department"] or "",
+            r["section"] or "",
+            r["batch"] or "",
+            r["year"] or "",
+            "active" if r["active"] else "inactive",
+            r["created_at"] or "",
+        ])
+
     return output.getvalue()
 

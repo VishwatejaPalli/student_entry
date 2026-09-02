@@ -10,6 +10,7 @@ Routes:
 """
 
 import json
+from datetime import datetime
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -31,10 +32,37 @@ async def entry_page(request: Request):
 
 @router.post("/api/identify")
 async def api_identify(data: IdentifyRequest):
-    """Identify a student and check if currently inside."""
+    """Identify a student, check inside status, and auto check-in if form has no required fields."""
     db = await get_db()
     try:
-        result = await identify_student(db, data.roll_no)
+        roll_no = data.roll_no.strip().upper()
+        result = await identify_student(db, roll_no)
+
+        # Check active form
+        cursor = await db.execute("SELECT id FROM forms WHERE active = 1 LIMIT 1")
+        form = await cursor.fetchone()
+        form_id = form["id"] if form else 1
+
+        cursor = await db.execute(
+            """SELECT COUNT(*) as cnt FROM form_fields
+               WHERE form_id = ? AND is_active = 1 AND required = 1""",
+            (form_id,),
+        )
+        row = await cursor.fetchone()
+        has_required = row["cnt"] > 0
+        result["has_required_fields"] = has_required
+        result["form_id"] = form_id
+
+        # If outside and form has no required questions, record entry instantly
+        if not result["is_inside"] and not has_required:
+            record_id = await create_entry(db, roll_no, form_id, {}, [])
+            now_iso = datetime.utcnow().isoformat()
+            result["entry_recorded"] = True
+            result["record_id"] = record_id
+            result["entry_time"] = now_iso
+        else:
+            result["entry_recorded"] = False
+
         return JSONResponse(content=result)
     finally:
         await db.close()

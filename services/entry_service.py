@@ -81,6 +81,11 @@ async def create_entry(
     roll_no = roll_no.strip().upper()
     now = datetime.utcnow().isoformat()
 
+    # Ensure student exists in master directory
+    cursor_st = await db.execute("SELECT id FROM students WHERE roll_no = ?", (roll_no,))
+    if not await cursor_st.fetchone():
+        await db.execute("INSERT OR IGNORE INTO students (roll_no, name) VALUES (?, '')", (roll_no,))
+
     cursor = await db.execute(
         """INSERT INTO records (form_id, roll_no, entry_time, created_at)
            VALUES (?, ?, ?, ?)""",
@@ -166,7 +171,7 @@ async def record_exit(db: aiosqlite.Connection, roll_no: str) -> Optional[dict]:
 
 
 async def get_dashboard_stats(db: aiosqlite.Connection) -> dict:
-    """Get dashboard statistics: currently inside, today's visits."""
+    """Get comprehensive dashboard statistics."""
     # Currently inside
     cursor = await db.execute(
         "SELECT COUNT(*) as cnt FROM records WHERE exit_time IS NULL"
@@ -183,10 +188,66 @@ async def get_dashboard_stats(db: aiosqlite.Connection) -> dict:
     row = await cursor.fetchone()
     today_visits = row["cnt"]
 
+    # Total students
+    cursor = await db.execute("SELECT COUNT(*) as cnt FROM students WHERE active = 1")
+    row = await cursor.fetchone()
+    total_students = row["cnt"]
+
+    # Active class sessions
+    cursor = await db.execute("SELECT COUNT(*) as cnt FROM class_sessions WHERE status = 'ACTIVE'")
+    row = await cursor.fetchone()
+    active_sessions = row["cnt"]
+
     return {
         "currently_inside": currently_inside,
         "today_visits": today_visits,
+        "total_students": total_students,
+        "active_sessions": active_sessions,
     }
+
+
+async def get_active_students_inside(db: aiosqlite.Connection) -> list[dict]:
+    """Get list of students currently marked as inside with elapsed duration."""
+    cursor = await db.execute("""
+        SELECT r.id, r.roll_no, r.entry_time,
+               COALESCE(s.name, '') as student_name,
+               COALESCE(s.department, '') as department,
+               COALESCE(s.section, '') as section,
+               COALESCE(s.batch, '') as batch
+        FROM records r
+        LEFT JOIN students s ON r.roll_no = s.roll_no
+        WHERE r.exit_time IS NULL
+        ORDER BY r.entry_time DESC
+    """)
+    rows = await cursor.fetchall()
+
+    now = datetime.utcnow()
+    result = []
+    for r in rows:
+        entry_time_str = r["entry_time"]
+        duration_mins = 0
+        try:
+            entry_dt = datetime.fromisoformat(entry_time_str)
+            duration_mins = max(0, int((now - entry_dt).total_seconds() // 60))
+        except Exception:
+            pass
+
+        h = duration_mins // 60
+        m = duration_mins % 60
+        duration_formatted = f"{h}h {m}m" if h > 0 else f"{m} min" if m > 0 else "Just now"
+
+        result.append({
+            "record_id": r["id"],
+            "roll_no": r["roll_no"],
+            "student_name": r["student_name"] or r["roll_no"],
+            "department": r["department"],
+            "section": r["section"],
+            "batch": r["batch"],
+            "entry_time": entry_time_str,
+            "duration_minutes": duration_mins,
+            "duration_formatted": duration_formatted,
+        })
+    return result
 
 
 async def get_records(
@@ -225,9 +286,13 @@ async def get_records(
     # Fetch page
     offset = (page - 1) * per_page
     cursor = await db.execute(
-        f"""SELECT r.*, COALESCE(s.name, '') as student_name
+        f"""SELECT r.*,
+                   COALESCE(s.name, '') as student_name,
+                   COALESCE(s.batch, '') as student_batch,
+                   cs.session_name, cs.class_name, cs.subject as session_subject, cs.room as session_room
             FROM records r
             LEFT JOIN students s ON r.roll_no = s.roll_no
+            LEFT JOIN class_sessions cs ON r.session_id = cs.id
             {where}
             ORDER BY r.entry_time DESC
             LIMIT ? OFFSET ?""",
@@ -239,6 +304,9 @@ async def get_records(
     for row in rows:
         record = dict(row)
         record["status"] = "IN" if row["exit_time"] is None else "OUT"
+        record["is_session"] = bool(row["session_id"])
+        record["session_name"] = row["session_name"] or ""
+        record["class_name"] = row["class_name"] or ""
 
         # Fetch custom field values
         cursor2 = await db.execute(

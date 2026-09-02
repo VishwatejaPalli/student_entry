@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk & Session Presets — Room Entry System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="admin-header">
+        <div>
+            <h1><span class="material-symbols-outlined" style="font-size: 1.8rem; vertical-align: middle; margin-right: 6px;">settings</span>Bulk & Session Presets</h1>
+            <p class="text-secondary text-sm">Customize lab rooms, subjects, faculty, batches, session defaults, and dynamic fields</p>
+        </div>
+        <div class="admin-actions">
+            <a href="/sessions" class="btn btn-ghost">← Back to Sessions</a>
+            <button class="btn btn-primary" id="saveConfigBtn" onclick="saveAllSettings()" style="display: inline-flex; align-items: center; gap: 6px;">
+                <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM565-275q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z"/></svg>
+                <span>Save All Presets</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Presets Grid -->
+    <div class="settings-grid mb-xl">
+        <!-- 1. Lab Rooms / Venues -->
+        <div class="setting-card">
+            <div class="card-header" style="border-bottom: none; margin-bottom: var(--space-sm); padding-bottom: 0;">
+                <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">meeting_room</span><span>Room / Lab Presets</span></h3>
+            </div>
+            <p class="text-muted text-sm mb-md">Pre-configured rooms that appear in dropdown suggestions.</p>
+
+            <div class="tag-container" id="roomsTagContainer"></div>
+
+            <div class="tag-input-row">
+                <input type="text" id="newRoomInput" class="form-input" placeholder="Add room (e.g. AI Lab 302)..." onkeydown="if(event.key==='Enter'){event.preventDefault(); addTag('rooms');}">
+                <button type="button" class="btn btn-secondary" onclick="addTag('rooms')">+ Add</button>
+            </div>
+        </div>
+
+        <!-- 2. Subjects / Labs -->
+        <div class="setting-card">
+            <div class="card-header" style="border-bottom: none; margin-bottom: var(--space-sm); padding-bottom: 0;">
+                <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">menu_book</span><span>Subject & Course Presets</span></h3>
+            </div>
+            <p class="text-muted text-sm mb-md">Subjects & lab courses for autocomplete.</p>
+
+            <div class="tag-container" id="subjectsTagContainer"></div>
+
+            <div class="tag-input-row">
+                <input type="text" id="newSubjectInput" class="form-input" placeholder="Add subject (e.g. Cloud Computing Lab)..." onkeydown="if(event.key==='Enter'){event.preventDefault(); addTag('subjects');}">
+                <button type="button" class="btn btn-secondary" onclick="addTag('subjects')">+ Add</button>
+            </div>
+        </div>
+
+        <!-- 3. Faculty / Lab Incharges -->
+        <div class="setting-card">
+            <div class="card-header" style="border-bottom: none; margin-bottom: var(--space-sm); padding-bottom: 0;">
+                <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">badge</span><span>Faculty & Incharge Presets</span></h3>
+            </div>
+            <p class="text-muted text-sm mb-md">Faculty names for quick-fill during session creation.</p>
+
+            <div class="tag-container" id="facultiesTagContainer"></div>
+
+            <div class="tag-input-row">
+                <input type="text" id="newFacultyInput" class="form-input" placeholder="Add faculty (e.g. Dr. Ramesh)..." onkeydown="if(event.key==='Enter'){event.preventDefault(); addTag('faculties');}">
+                <button type="button" class="btn btn-secondary" onclick="addTag('faculties')">+ Add</button>
+            </div>
+        </div>
+
+        <!-- 4. Standard Batch Names -->
+        <div class="setting-card">
+            <div class="card-header" style="border-bottom: none; margin-bottom: var(--space-sm); padding-bottom: 0;">
+                <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">sell</span><span>Standard Batch Names</span></h3>
+            </div>
+            <p class="text-muted text-sm mb-md">Common batch labels (A1, A2, A3, B1, etc.) for batch selection pills.</p>
+
+            <div class="tag-container" id="batchesTagContainer"></div>
+
+            <div class="tag-input-row">
+                <input type="text" id="newBatchInput" class="form-input" placeholder="Add batch (e.g. A3, Batch 3)..." onkeydown="if(event.key==='Enter'){event.preventDefault(); addTag('batches');}">
+                <button type="button" class="btn btn-secondary" onclick="addTag('batches')">+ Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Default Session Preferences -->
+    <div class="card mb-xl">
+        <div class="card-header">
+            <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">tune</span><span>Default Session Preferences</span></h3>
+            <span class="text-muted text-sm">Applied automatically when opening the create session form</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-lg);">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="defaultPcStrategy">Default PC Strategy</label>
+                <select id="defaultPcStrategy" class="form-select">
+                    <option value="auto_sequential">Auto Sequential (PC-01, PC-02...)</option>
+                    <option value="none">No PC Tracking</option>
+                    <option value="manual">Manual Entry</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="defaultPcPrefix">Default PC Prefix</label>
+                <input type="text" id="defaultPcPrefix" class="form-input" value="PC-">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="defaultLateThreshold">Default Late Threshold (minutes)</label>
+                <input type="number" id="defaultLateThreshold" class="form-input" value="15" min="0" max="120">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="defaultBulkStatus">Default Bulk Record Status</label>
+                <select id="defaultBulkStatus" class="form-select">
+                    <option value="PRESENT">Present (Attended)</option>
+                    <option value="LATE">Late</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Dynamic Custom Fields for Sessions -->
+    <div class="card mb-xl">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">edit_note</span><span>Dynamic Custom Fields for Sessions</span></h3>
+                <p class="text-muted text-sm mt-xs">Add custom inputs to class session creation (e.g. Experiment No., Lab Task, Staff Remarks).</p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addCustomFieldRow()" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined">add</span><span>Add Field</span></button>
+        </div>
+
+        <div id="customFieldsContainer"></div>
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="flex justify-end gap-sm mt-lg">
+        <a href="/sessions" class="btn btn-ghost">Cancel</a>
+        <button class="btn btn-primary btn-lg" onclick="saveAllSettings()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="currentColor"><path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM565-275q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z"/></svg>
+            <span>Save All Presets & Settings</span>
+        </button>
+    </div>
+</div>
+
+<!-- Embedded Current Config JSON -->
+<script id="currentConfigJson" type="application/json">
+{{ session_config | tojson | safe }}
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/session-settings.js?v=2"></script>
+{% endblock %}

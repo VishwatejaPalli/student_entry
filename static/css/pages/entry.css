@@ -1,0 +1,61 @@
+/* ═══════════════════════════════════════════════════════════════
+   Entry Page Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+.entry-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    padding: var(--space-xl) 0;
+}
+
+.entry-card {
+    width: 100%;
+    max-width: 520px;
+    padding: var(--space-2xl);
+}
+
+.entry-card .card-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-sm);
+    border-bottom: none;
+    padding-bottom: var(--space-md);
+}
+
+.entry-icon {
+    width: 60px;
+    height: 60px;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin-bottom: var(--space-sm);
+    box-shadow: 0 8px 30px rgba(108, 99, 255, 0.3);
+}
+
+.entry-subtitle {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.entry-status {
+    text-align: center;
+    padding: var(--space-lg);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+}
+
+.entry-status--inside {
+    background: rgba(0, 230, 118, 0.08);
+    border: 1px solid rgba(0, 230, 118, 0.2);
+}
+
+.entry-status--inside .status-text {
+    color: var(--accent-success);
+    font-weight: 600;
+}

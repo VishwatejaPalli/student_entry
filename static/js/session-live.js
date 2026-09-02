@@ -101,7 +101,9 @@ function toggleAudioFeedback() {
     soundEnabled = !soundEnabled;
     const btn = document.getElementById('soundToggleBtn');
     if (btn) {
-        btn.textContent = soundEnabled ? '🔊 Sound ON' : '🔇 Muted';
+        btn.innerHTML = soundEnabled
+            ? `<span class="material-symbols-outlined" style="font-size: 1rem;">volume_up</span><span>Sound ON</span>`
+            : `<span class="material-symbols-outlined" style="font-size: 1rem;">volume_off</span><span>Muted</span>`;
         btn.classList.toggle('btn-secondary', soundEnabled);
         btn.classList.toggle('btn-ghost', !soundEnabled);
     }
@@ -142,7 +144,11 @@ async function handleSessionScan(e) {
         // Update feedback banner
         if (feedback) {
             feedback.classList.remove('hidden');
-            if (fIcon) fIcon.textContent = result.status === 'LATE' ? '⏰' : '✓';
+            if (fIcon) {
+                fIcon.innerHTML = result.status === 'LATE'
+                    ? `<span class="material-symbols-outlined text-warning">schedule</span>`
+                    : `<span class="material-symbols-outlined text-success">check_circle</span>`;
+            }
             if (fText) fText.textContent = `${result.student_name || result.roll_no} — ${result.status}`;
             if (fSub) {
                 fSub.textContent = (result.pc_assigned ? `Assigned: ${result.pc_assigned} • ` : '') +
@@ -163,7 +169,7 @@ async function handleSessionScan(e) {
 
         if (feedback) {
             feedback.classList.remove('hidden');
-            if (fIcon) fIcon.textContent = '✕';
+            if (fIcon) fIcon.innerHTML = `<span class="material-symbols-outlined text-danger">cancel</span>`;
             if (fText) fText.textContent = `Error: ${err.message}`;
             if (fSub) fSub.textContent = `Roll No: ${rollNo}`;
         }
@@ -213,10 +219,10 @@ function updateRosterRow(data) {
             <td><span class="text-xs text-muted">WALK_IN</span></td>
             <td>
                 <div class="flex gap-xs">
-                    <button type="button" class="btn btn-ghost btn-sm text-success" title="Mark Present" onclick="manualStatus('${data.roll_no}', 'PRESENT')">✓</button>
-                    <button type="button" class="btn btn-ghost btn-sm text-warning" title="Mark Late" onclick="manualStatus('${data.roll_no}', 'LATE')">⏰</button>
-                    <button type="button" class="btn btn-ghost btn-sm text-danger" title="Mark Absent" onclick="manualStatus('${data.roll_no}', 'ABSENT')">✕</button>
-                    <button type="button" class="btn btn-ghost btn-sm" title="Edit PC" onclick="editPcPrompt('${data.roll_no}', '${data.pc_assigned}')">💻</button>
+                    <button type="button" class="btn btn-ghost btn-sm text-success" title="Mark Present" onclick="manualStatus('${data.roll_no}', 'PRESENT')"><span class="material-symbols-outlined" style="font-size: 1rem;">check</span></button>
+                    <button type="button" class="btn btn-ghost btn-sm text-warning" title="Mark Late" onclick="manualStatus('${data.roll_no}', 'LATE')"><span class="material-symbols-outlined" style="font-size: 1rem;">schedule</span></button>
+                    <button type="button" class="btn btn-ghost btn-sm text-danger" title="Mark Absent" onclick="manualStatus('${data.roll_no}', 'ABSENT')"><span class="material-symbols-outlined" style="font-size: 1rem;">close</span></button>
+                    <button type="button" class="btn btn-ghost btn-sm" title="Edit PC" onclick="editPcPrompt('${data.roll_no}', '${data.pc_assigned}')"><span class="material-symbols-outlined" style="font-size: 1rem;">computer</span></button>
                 </div>
             </td>
         `;

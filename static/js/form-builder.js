@@ -275,6 +275,40 @@ async function activateForm(id) {
     }
 }
 
+
+// ── Delete Form ─────────────────────────────────────────────────
+
+async function deleteForm(id, name) {
+    const displayName = name ? `"${name}"` : 'this form';
+    if (!confirm(`Are you sure you want to permanently delete ${displayName}?\nAll custom field configurations for this form will be removed.`)) {
+        return;
+    }
+
+    try {
+        const res = await apiCall(`/api/forms/${id}`, 'DELETE');
+        showToast(res?.message || 'Form deleted successfully', 'success');
+        const row = document.getElementById(`formRow-${id}`);
+        if (row) {
+            row.style.opacity = '0';
+            row.style.transform = 'scale(0.95)';
+            row.style.transition = 'all 0.3s ease';
+            setTimeout(() => {
+                row.remove();
+                // Check if any form rows remain
+                const remaining = document.querySelectorAll('.field-list .field-item');
+                if (remaining.length === 0) {
+                    window.location.reload();
+                }
+            }, 300);
+        } else {
+            setTimeout(() => window.location.reload(), 500);
+        }
+    } catch (err) {
+        // Error shown by apiCall
+    }
+}
+
+
 // ── Delegated event listeners ───────────────────────────────────
 
 document.addEventListener('click', (e) => {
@@ -282,5 +316,11 @@ document.addEventListener('click', (e) => {
     if (activateBtn) {
         e.preventDefault();
         activateForm(activateBtn.dataset.activateForm);
+    }
+
+    const deleteBtn = e.target.closest('[data-delete-form]');
+    if (deleteBtn) {
+        e.preventDefault();
+        deleteForm(deleteBtn.dataset.deleteForm, deleteBtn.dataset.formName);
     }
 });

@@ -1,0 +1,190 @@
+/* ═══════════════════════════════════════════════════════════════
+   Navbar & Segmented Theme Switch Component
+   ═══════════════════════════════════════════════════════════════ */
+
+.navbar {
+    background: var(--bg-navbar);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-subtle);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: var(--space-md) 0;
+    transition: background var(--transition-base), border-color var(--transition-base);
+}
+
+html[data-theme="light"] .navbar {
+    background: var(--bg-navbar);
+    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.navbar .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+html[data-theme="light"] .navbar-brand {
+    color: var(--text-primary);
+}
+
+.navbar-brand .brand-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.navbar-links {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    list-style: none;
+}
+
+.navbar-links a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+}
+
+.navbar-links a:hover,
+.navbar-links a.active {
+    color: var(--text-primary);
+    background: var(--bg-glass);
+}
+
+.navbar-links a.active {
+    color: var(--accent-primary);
+    background: rgba(108, 99, 255, 0.12);
+}
+
+html[data-theme="light"] .navbar-links a {
+    color: var(--text-secondary);
+}
+
+html[data-theme="light"] .navbar-links a:hover {
+    color: var(--text-primary);
+    background: #f1f5f9;
+}
+
+html[data-theme="light"] .navbar-links a.active {
+    color: var(--accent-primary);
+    background: rgba(85, 72, 235, 0.1);
+}
+
+/* ── Segmented Theme Switch ──────────────────────────────────── */
+.theme-segmented-switch {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-full);
+    padding: 2px;
+    gap: 2px;
+}
+
+.theme-seg-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-full);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    outline: none;
+}
+
+.theme-seg-btn:hover {
+    color: var(--text-primary);
+}
+
+.theme-seg-btn.active {
+    background: var(--gradient-primary);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(108, 99, 255, 0.35);
+}
+
+html[data-theme="light"] .theme-segmented-switch {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+html[data-theme="light"] .theme-seg-btn {
+    color: #64748b;
+}
+
+html[data-theme="light"] .theme-seg-btn:hover {
+    color: #1e293b;
+}
+
+html[data-theme="light"] .theme-seg-btn.active {
+    background: #ffffff;
+    color: #5548eb;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 550px) {
+    .theme-seg-btn {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.72rem;
+    }
+}
+
+/* ── Mobile Navbar ───────────────────────────────────────────── */
+.navbar-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: var(--space-xs);
+}
+
+@media (max-width: 768px) {
+    .navbar-toggle { display: block; }
+    .navbar-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg-navbar);
+        backdrop-filter: blur(20px);
+        flex-direction: column;
+        padding: var(--space-md);
+        border-bottom: 1px solid var(--border-subtle);
+    }
+    .navbar-links.open { display: flex; }
+    .navbar-links a { width: 100%; }
+}

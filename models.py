@@ -3,7 +3,7 @@ Pydantic schemas for request/response validation.
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 
@@ -14,6 +14,7 @@ class StudentCreate(BaseModel):
     name: str = ""
     department: str = ""
     section: str = ""
+    batch: str = ""
     year: str = ""
 
 
@@ -21,6 +22,7 @@ class StudentUpdate(BaseModel):
     name: Optional[str] = None
     department: Optional[str] = None
     section: Optional[str] = None
+    batch: Optional[str] = None
     year: Optional[str] = None
     active: Optional[bool] = None
 
@@ -31,6 +33,7 @@ class StudentOut(BaseModel):
     name: str
     department: str
     section: str
+    batch: str = ""
     year: str
     active: bool
     created_at: str
@@ -100,9 +103,17 @@ class IdentifyRequest(BaseModel):
     roll_no: str = Field(..., min_length=1)
 
 
+class RollNoRequest(BaseModel):
+    roll_no: str = Field(..., min_length=1)
+
+
 class IdentifyResponse(BaseModel):
     roll_no: str
     student_name: str
+    department: str = ""
+    section: str = ""
+    batch: str = ""
+    year: str = ""
     is_inside: bool
     record_id: Optional[int] = None
 
@@ -152,6 +163,7 @@ class SessionCreate(BaseModel):
     students: list[str] = Field(default_factory=list)  # list of roll numbers
     is_completed_bulk: bool = False  # If true, records are immediately marked as COMPLETED/PRESENT
     bulk_status: str = "PRESENT"     # Default status for immediate bulk log
+    custom_fields: dict[str, Any] = Field(default_factory=dict)
 
 
 class SessionStudentUpdate(BaseModel):
@@ -203,6 +215,7 @@ class SessionOut(BaseModel):
     late_threshold_min: int
     pc_strategy: str
     pc_prefix: str
+    custom_fields: dict[str, Any] = Field(default_factory=dict)
     status: str
     created_at: str
     ended_at: Optional[str] = None
@@ -213,3 +226,29 @@ class SessionOut(BaseModel):
     pending_count: int = 0
     students: list[SessionStudentOut] = Field(default_factory=list)
 
+
+# ── Bulk / Session Custom Configuration ──────────────────────────
+
+class SessionCustomFieldDef(BaseModel):
+    field_name: str
+    label: str
+    field_type: str = "text"
+    required: bool = False
+    placeholder: str = ""
+    options: List[str] = Field(default_factory=list)
+
+
+class SessionConfigModel(BaseModel):
+    rooms: List[str] = Field(default_factory=list)
+    subjects: List[str] = Field(default_factory=list)
+    faculties: List[str] = Field(default_factory=list)
+    batches: List[str] = Field(default_factory=list)
+    defaults: dict[str, Any] = Field(default_factory=dict)
+    custom_fields: List[SessionCustomFieldDef] = Field(default_factory=list)
+
+
+class BatchAssignRequest(BaseModel):
+    class_name: str
+    split_count: int = 2
+    prefix: str = "Batch "
+    ranges: Optional[List[dict[str, Any]]] = None

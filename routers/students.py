@@ -1,5 +1,5 @@
 """
-Students Router — Student management CRUD.
+Students Router — Student management CRUD with batch support.
 
 Routes:
   GET    /admin/students          → Student management page
@@ -7,13 +7,14 @@ Routes:
   PUT    /api/students/{id}       → Edit student
   POST   /api/students/import     → Import from Excel/CSV
   GET    /api/students/search     → Search students
-  GET    /api/students            → List all students (paginated)
+  GET    /api/students            → List all students (paginated + filtered)
 """
 
 import csv
 import io
+import os
 from fastapi import APIRouter, Request, Query, UploadFile, File
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from typing import Optional
 
@@ -30,7 +31,7 @@ async def students_page(request: Request):
     db = await get_db()
     try:
         cursor = await db.execute(
-            "SELECT * FROM students WHERE active = 1 ORDER BY roll_no LIMIT 100"
+            "SELECT * FROM students WHERE active = 1 ORDER BY department, section, roll_no LIMIT 1000"
         )
         students = [dict(r) for r in await cursor.fetchall()]
 
@@ -38,12 +39,40 @@ async def students_page(request: Request):
         row = await cursor.fetchone()
         total = row["cnt"]
 
+        # Get unique departments, sections, batches for filtering
+        cursor_dept = await db.execute("SELECT DISTINCT department FROM students WHERE active = 1 AND department != '' ORDER BY department")
+        departments = [r["department"] for r in await cursor_dept.fetchall()]
+
+        cursor_batch = await db.execute("SELECT DISTINCT batch FROM students WHERE active = 1 AND batch != '' ORDER BY batch")
+        batches = [r["batch"] for r in await cursor_batch.fetchall()]
+
         return templates.TemplateResponse(request, name="admin/students.html", context={
             "students": students,
             "total": total,
+            "departments": departments,
+            "batches": batches,
         })
     finally:
         await db.close()
+
+
+@router.get("/api/students/sample-template")
+async def api_download_sample_template():
+    """Download sample CSV template for student import."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["roll_no", "name", "department", "section", "batch", "year"])
+    writer.writerow(["24885A0401", "Aarav Sharma", "ECE", "A", "A1", "3"])
+    writer.writerow(["24885A0402", "Aditi Patel", "ECE", "A", "A1", "3"])
+    writer.writerow(["24885A0406", "Deepak Verma", "ECE", "A", "A2", "3"])
+    writer.writerow(["24885A0411", "Kavya Iyer", "ECE", "B", "B1", "3"])
+    output.seek(0)
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=students_import_template.csv"}
+    )
 
 
 @router.get("/api/students")
@@ -51,8 +80,10 @@ async def api_list_students(
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=1, le=200),
     search: Optional[str] = None,
+    department: Optional[str] = None,
+    batch: Optional[str] = None,
 ):
-    """List students with optional search."""
+    """List students with optional search, department, and batch filtering."""
     db = await get_db()
     try:
         conditions = ["active = 1"]
@@ -61,6 +92,14 @@ async def api_list_students(
         if search:
             conditions.append("(roll_no LIKE ? OR name LIKE ?)")
             params.extend([f"%{search}%", f"%{search}%"])
+
+        if department:
+            conditions.append("department = ?")
+            params.append(department)
+
+        if batch:
+            conditions.append("batch = ?")
+            params.append(batch)
 
         where = "WHERE " + " AND ".join(conditions)
 
@@ -71,7 +110,7 @@ async def api_list_students(
         offset = (page - 1) * per_page
         cursor = await db.execute(
             f"""SELECT * FROM students {where}
-                ORDER BY roll_no
+                ORDER BY department, section, roll_no
                 LIMIT ? OFFSET ?""",
             params + [per_page, offset],
         )
@@ -93,7 +132,7 @@ async def api_search_students(q: str = Query("", min_length=1)):
     db = await get_db()
     try:
         cursor = await db.execute(
-            """SELECT id, roll_no, name, department, year
+            """SELECT id, roll_no, name, department, section, batch, year
                FROM students
                WHERE active = 1 AND (roll_no LIKE ? OR name LIKE ?)
                ORDER BY roll_no
@@ -125,9 +164,9 @@ async def api_create_student(data: StudentCreate):
             )
 
         await db.execute(
-            """INSERT INTO students (roll_no, name, department, section, year)
-               VALUES (?, ?, ?, ?, ?)""",
-            (roll_no, data.name, data.department, data.section, data.year),
+            """INSERT INTO students (roll_no, name, department, section, batch, year)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (roll_no, data.name.strip(), data.department.strip(), data.section.strip(), data.batch.strip().upper(), data.year.strip()),
         )
         await db.commit()
         return JSONResponse({"success": True, "roll_no": roll_no}, status_code=201)
@@ -145,16 +184,19 @@ async def api_update_student(student_id: int, data: StudentUpdate):
 
         if data.name is not None:
             updates.append("name = ?")
-            params.append(data.name)
+            params.append(data.name.strip())
         if data.department is not None:
             updates.append("department = ?")
-            params.append(data.department)
+            params.append(data.department.strip())
         if data.section is not None:
             updates.append("section = ?")
-            params.append(data.section)
+            params.append(data.section.strip())
+        if data.batch is not None:
+            updates.append("batch = ?")
+            params.append(data.batch.strip().upper())
         if data.year is not None:
             updates.append("year = ?")
-            params.append(data.year)
+            params.append(data.year.strip())
         if data.active is not None:
             updates.append("active = ?")
             params.append(1 if data.active else 0)
@@ -173,11 +215,45 @@ async def api_update_student(student_id: int, data: StudentUpdate):
         await db.close()
 
 
+@router.delete("/api/students/{student_id}")
+async def api_delete_student(student_id: int):
+    """Delete a student from the directory with cascade cleanup."""
+    db = await get_db()
+    try:
+        cursor = await db.execute("SELECT id, roll_no, name FROM students WHERE id = ?", (student_id,))
+        student = await cursor.fetchone()
+        if not student:
+            return JSONResponse({"error": "Student not found"}, status_code=404)
+
+        roll_no = student["roll_no"]
+
+        # 1. Clean up session students mappings
+        await db.execute("DELETE FROM session_students WHERE roll_no = ?", (roll_no,))
+
+        # 2. Clean up records and associated record values
+        cursor_rec = await db.execute("SELECT id FROM records WHERE roll_no = ?", (roll_no,))
+        rec_rows = await cursor_rec.fetchall()
+        for rec in rec_rows:
+            await db.execute("DELETE FROM record_values WHERE record_id = ?", (rec["id"],))
+        await db.execute("DELETE FROM records WHERE roll_no = ?", (roll_no,))
+
+        # 3. Delete student
+        await db.execute("DELETE FROM students WHERE id = ?", (student_id,))
+        await db.commit()
+
+        return JSONResponse({
+            "success": True,
+            "message": f"Student {roll_no} ({student['name'] or 'No Name'}) removed successfully."
+        })
+    finally:
+        await db.close()
+
+
 @router.post("/api/students/import")
 async def api_import_students(file: UploadFile = File(...)):
     """
     Import students from CSV or Excel.
-    Expected columns: roll_no, name, department, section, year
+    Expected columns: roll_no, name, department, section, batch, year
     """
     db = await get_db()
     try:
@@ -220,8 +296,9 @@ async def api_import_students(file: UploadFile = File(...)):
 
             name = row.get("name", row.get("student name", ""))
             department = row.get("department", row.get("dept", ""))
-            section = row.get("section", "")
-            year = row.get("year", "")
+            section = row.get("section", row.get("sec", ""))
+            batch = row.get("batch", row.get("sub_batch", "")).strip().upper()
+            year = row.get("year", row.get("yr", ""))
 
             try:
                 cursor = await db.execute(
@@ -232,15 +309,15 @@ async def api_import_students(file: UploadFile = File(...)):
                 if existing:
                     # Update existing
                     await db.execute(
-                        """UPDATE students SET name = ?, department = ?, section = ?, year = ?
+                        """UPDATE students SET name = ?, department = ?, section = ?, batch = ?, year = ?
                            WHERE roll_no = ?""",
-                        (name, department, section, year, roll_no),
+                        (name, department, section, batch, year, roll_no),
                     )
                 else:
                     await db.execute(
-                        """INSERT INTO students (roll_no, name, department, section, year)
-                           VALUES (?, ?, ?, ?, ?)""",
-                        (roll_no, name, department, section, year),
+                        """INSERT INTO students (roll_no, name, department, section, batch, year)
+                           VALUES (?, ?, ?, ?, ?, ?)""",
+                        (roll_no, name, department, section, batch, year),
                     )
                 imported += 1
             except Exception as e:
@@ -253,7 +330,96 @@ async def api_import_students(file: UploadFile = File(...)):
             "success": True,
             "imported": imported,
             "skipped": skipped,
-            "errors": errors_list[:10],  # Limit error list
+            "errors": errors_list[:10],
+        })
+    finally:
+        await db.close()
+
+
+@router.get("/api/admin/data-summary")
+async def api_data_summary():
+    """Returns total counts of students, records, and sessions for confirmation before clear."""
+    db = await get_db()
+    try:
+        c1 = await db.execute("SELECT COUNT(*) as cnt FROM students")
+        students_count = (await c1.fetchone())["cnt"]
+
+        c2 = await db.execute("SELECT COUNT(*) as cnt FROM records")
+        records_count = (await c2.fetchone())["cnt"]
+
+        c3 = await db.execute("SELECT COUNT(*) as cnt FROM class_sessions")
+        sessions_count = (await c3.fetchone())["cnt"]
+
+        return JSONResponse({
+            "students": students_count,
+            "records": records_count,
+            "sessions": sessions_count,
+        })
+    finally:
+        await db.close()
+
+
+@router.post("/api/admin/clear-data")
+async def api_clear_data(request: Request):
+    """
+    Password-protected clear / reset data in one go for year or semester transition.
+    Body JSON:
+      - password: str
+      - target: 'students' | 'logs' | 'all'
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid request body"}, status_code=400)
+
+    password = str(body.get("password", "")).strip()
+    target = str(body.get("target", "all")).strip()
+
+    admin_password = os.environ.get("ADMIN_PASSWORD", "admin")
+    if password != admin_password:
+        return JSONResponse({"error": "Incorrect admin password. Action aborted."}, status_code=401)
+
+    db = await get_db()
+    try:
+        deleted_summary = {}
+
+        if target in ("students", "all"):
+            # Cascade delete records and session mappings first
+            await db.execute("DELETE FROM record_values")
+            await db.execute("DELETE FROM session_students")
+            await db.execute("DELETE FROM records")
+            
+            c_stud = await db.execute("SELECT COUNT(*) as cnt FROM students")
+            stud_cnt = (await c_stud.fetchone())["cnt"]
+            await db.execute("DELETE FROM students")
+            deleted_summary["students"] = stud_cnt
+            deleted_summary["records"] = "All"
+
+        if target == "logs":
+            # Delete only entry logs & class sessions, keep students intact
+            await db.execute("DELETE FROM record_values")
+            await db.execute("DELETE FROM session_students")
+            await db.execute("DELETE FROM records")
+            await db.execute("DELETE FROM class_sessions")
+            deleted_summary["records"] = "All"
+            deleted_summary["sessions"] = "All"
+
+        if target == "all":
+            await db.execute("DELETE FROM class_sessions")
+            deleted_summary["sessions"] = "All"
+
+        await db.commit()
+
+        target_desc = {
+            "students": "Student Master Directory & associated records",
+            "logs": "Activity Logs & Class Sessions",
+            "all": "All Student Profiles, Records, and Class Sessions",
+        }.get(target, "Selected data")
+
+        return JSONResponse({
+            "success": True,
+            "message": f"Successfully cleared {target_desc} in one go.",
+            "summary": deleted_summary,
         })
     finally:
         await db.close()

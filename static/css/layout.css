@@ -1,0 +1,31 @@
+/* ═══════════════════════════════════════════════════════════════
+   Page Layout & Container Grid System
+   ═══════════════════════════════════════════════════════════════ */
+
+.app-wrapper {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+}
+
+.container--narrow {
+    max-width: 640px;
+}
+
+.container--wide {
+    max-width: 1400px;
+}
+
+.page-content {
+    flex: 1;
+    padding: var(--space-xl) 0;
+}

@@ -3,21 +3,88 @@
 {% block title %}Students — Room Entry System{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container container--wide">
     <div class="admin-header">
-        <h1>👥 Students <span class="text-muted text-sm">({{ total }})</span></h1>
+        <div>
+            <h1><span class="material-symbols-outlined" style="font-size: 1.8rem; vertical-align: middle; margin-right: 4px;">group</span>Student Directory <span id="studentCountBadge" class="text-muted text-sm">({{ total }} total)</span></h1>
+            <p class="text-secondary text-sm">Manage student profiles, department rosters, sections, and batch allocations</p>
+        </div>
         <div class="admin-actions">
-            <button class="btn btn-secondary btn-sm" onclick="showImportModal()">📤 Import CSV/Excel</button>
-            <button class="btn btn-primary btn-sm" onclick="showAddModal()">+ Add Student</button>
+            <a href="/api/export/students/excel" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;" title="Download complete Master Student Excel Sheet">
+                <span class="material-symbols-outlined">table_view</span>
+                <span>Master Student Excel</span>
+            </a>
+            <button class="btn btn-secondary btn-sm" onclick="showImportModal()" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined">upload_file</span><span>Import CSV/Excel</span></button>
+            <button class="btn btn-primary btn-sm" onclick="showAddModal()" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined">person_add</span><span>Add Student</span></button>
+            <button class="btn btn-danger btn-sm" onclick="openClearDataModal()" style="display: inline-flex; align-items: center; gap: 4px;" title="Clear or Reset Data for Year Change (Password Protected)">
+                <span class="material-symbols-outlined">delete_sweep</span>
+                <span>Clear / Reset Data</span>
+            </button>
         </div>
     </div>
 
-    <!-- Search -->
-    <div class="card mb-lg" style="padding: var(--space-md) var(--space-lg);">
-        <div class="flex items-center gap-md">
-            <input type="text" id="studentSearch" class="form-input"
-                   placeholder="Search by roll number or name..." style="max-width: 350px;"
-                   oninput="searchStudents(this.value)">
+    <!-- ── Universal Row Filters Bar ────────────────────────────── -->
+    <div class="filters-card">
+        <div class="filters-grid">
+            <div class="filter-group">
+                <label class="filter-label" for="studentSearch" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">search</span> Search</label>
+                <input type="text" id="studentSearch" class="form-input"
+                       placeholder="Search roll number or name..."
+                       oninput="applyStudentFilters()">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label" for="filterDept" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">domain</span> Department</label>
+                <select id="filterDept" class="form-select" onchange="applyStudentFilters()">
+                    <option value="">All Departments</option>
+                    {% for d in departments %}
+                    <option value="{{ d }}">{{ d }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label" for="filterSection" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">class</span> Section</label>
+                <select id="filterSection" class="form-select" onchange="applyStudentFilters()">
+                    <option value="">All Sections</option>
+                    <option value="A">Section A</option>
+                    <option value="B">Section B</option>
+                    <option value="C">Section C</option>
+                    <option value="D">Section D</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label" for="filterBatch" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">sell</span> Batch</label>
+                <select id="filterBatch" class="form-select" onchange="applyStudentFilters()">
+                    <option value="">All Batches</option>
+                    {% for b in batches %}
+                    <option value="{{ b }}">{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label" for="filterYear" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">calendar_today</span> Year</label>
+                <select id="filterYear" class="form-select" onchange="applyStudentFilters()">
+                    <option value="">All Years</option>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                </select>
+            </div>
+
+            <div class="filter-group filter-actions" style="display: flex; flex-direction: row; gap: var(--space-xs); align-items: flex-end;">
+                <button type="button" id="studentSearchBtn" class="btn btn-primary btn-sm" onclick="applyStudentFilters()" title="Apply Search & Filters" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem;">search</span>
+                    <span>Search</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="resetStudentFilters()" title="Reset all filters" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem;">close</span>
+                    <span>Clear</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -31,27 +98,57 @@
                         <th>Name</th>
                         <th>Department</th>
                         <th>Section</th>
+                        <th>Batch</th>
                         <th>Year</th>
-                        <th>Actions</th>
+                        <th style="text-align: right;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="studentsBody">
                     {% for s in students %}
-                    <tr data-student-id="{{ s.id }}">
+                    <tr id="studentRow-{{ s.id }}"
+                        data-student-id="{{ s.id }}"
+                        data-dept="{{ s.department }}"
+                        data-section="{{ s.section }}"
+                        data-batch="{{ s.batch }}"
+                        data-year="{{ s.year }}">
                         <td><strong>{{ s.roll_no }}</strong></td>
                         <td>{{ s.name or '—' }}</td>
                         <td>{{ s.department or '—' }}</td>
                         <td>{{ s.section or '—' }}</td>
-                        <td>{{ s.year or '—' }}</td>
                         <td>
-                            <button class="btn btn-ghost btn-sm"
-                                    data-edit-student="{{ s.id }}"
+                            {% if s.batch %}
+                            <span class="badge badge--batch">{{ s.batch }}</span>
+                            {% else %}
+                            <span class="text-muted text-xs">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ s.year or '—' }}</td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <button type="button"
+                                    class="btn btn-ghost btn-sm"
+                                    onclick="onEditStudentBtn(this)"
+                                    data-student-id="{{ s.id }}"
                                     data-roll="{{ s.roll_no }}"
                                     data-name="{{ s.name }}"
                                     data-dept="{{ s.department }}"
                                     data-section="{{ s.section }}"
-                                    data-year="{{ s.year }}">
-                                ✏️
+                                    data-batch="{{ s.batch or '' }}"
+                                    data-year="{{ s.year }}"
+                                    title="Edit Student"
+                                    style="display: inline-flex; align-items: center; gap: 4px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
+                                <span>Edit</span>
+                            </button>
+                            <button type="button"
+                                    class="btn btn-danger btn-sm"
+                                    onclick="onDeleteStudentBtn(this)"
+                                    data-student-id="{{ s.id }}"
+                                    data-roll="{{ s.roll_no }}"
+                                    data-name="{{ s.name }}"
+                                    title="Remove student from directory"
+                                    style="display: inline-flex; align-items: center; gap: 4px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                                <span>Delete</span>
                             </button>
                         </td>
                     </tr>
@@ -59,9 +156,9 @@
 
                     {% if not students %}
                     <tr>
-                        <td colspan="6">
+                        <td colspan="7">
                             <div class="empty-state">
-                                <div class="icon">👥</div>
+                                <div class="icon"><span class="material-symbols-outlined" style="font-size: 3rem;">group</span></div>
                                 <p>No students yet. Add one or import from a file.</p>
                             </div>
                         </td>
@@ -78,31 +175,37 @@
     <div class="modal">
         <div class="modal-header">
             <h3 id="studentModalTitle">Add Student</h3>
-            <button class="btn btn-ghost" onclick="closeModal('studentModal')">✕</button>
+            <button class="btn btn-ghost" onclick="closeModal('studentModal')"><span class="material-symbols-outlined">close</span></button>
         </div>
         <form id="studentForm">
             <input type="hidden" id="editStudentId" value="">
             <div class="form-group">
-                <label for="sRollNo">Roll Number</label>
+                <label for="sRollNo">Roll Number *</label>
                 <input type="text" id="sRollNo" class="form-input" placeholder="e.g. 24885A0407" required>
             </div>
             <div class="form-group">
-                <label for="sName">Name</label>
-                <input type="text" id="sName" class="form-input" placeholder="Student Name">
+                <label for="sName">Full Name</label>
+                <input type="text" id="sName" class="form-input" placeholder="e.g. Aarav Sharma">
             </div>
             <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
                 <div class="form-group">
                     <label for="sDept">Department</label>
-                    <input type="text" id="sDept" class="form-input" placeholder="e.g. CSE">
+                    <input type="text" id="sDept" class="form-input" placeholder="e.g. ECE" value="ECE">
                 </div>
                 <div class="form-group">
                     <label for="sSection">Section</label>
-                    <input type="text" id="sSection" class="form-input" placeholder="e.g. A">
+                    <input type="text" id="sSection" class="form-input" placeholder="e.g. A or B">
                 </div>
             </div>
-            <div class="form-group">
-                <label for="sYear">Year</label>
-                <input type="text" id="sYear" class="form-input" placeholder="e.g. 3">
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+                <div class="form-group">
+                    <label for="sBatch">Batch (e.g. A1, A2, B1)</label>
+                    <input type="text" id="sBatch" class="form-input" placeholder="e.g. A1">
+                </div>
+                <div class="form-group">
+                    <label for="sYear">Year</label>
+                    <input type="text" id="sYear" class="form-input" placeholder="e.g. 3">
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-ghost" onclick="closeModal('studentModal')">Cancel</button>
@@ -116,19 +219,104 @@
 <div class="modal-overlay" id="importModal">
     <div class="modal">
         <div class="modal-header">
-            <h3>Import Students</h3>
-            <button class="btn btn-ghost" onclick="closeModal('importModal')">✕</button>
+            <h3 style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">upload_file</span><span>Import Students</span></h3>
+            <button class="btn btn-ghost" onclick="closeModal('importModal')"><span class="material-symbols-outlined">close</span></button>
         </div>
         <div>
             <p class="text-muted text-sm mb-md">
-                Upload a CSV or Excel file with columns: <strong>roll_no</strong>, name, department, section, year.
+                Upload a CSV or Excel file with columns: <strong>roll_no</strong>, name, department, section, batch, year.
             </p>
+            <div class="mb-md">
+                <a href="/api/students/sample-template" class="btn btn-ghost btn-sm" download="students_import_template.csv" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem;">download</span>
+                    <span>Download Sample CSV Template</span>
+                </a>
+            </div>
             <div class="form-group">
                 <input type="file" id="importFile" accept=".csv,.xlsx,.xls" class="form-input">
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeModal('importModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="importStudents()">Upload & Import</button>
+                <button class="btn btn-primary" onclick="importStudents()" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">upload</span><span>Upload & Import</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clear & Reset Data Modal (Year-End / Semester Transition) -->
+<div class="modal-overlay" id="clearDataModal">
+    <div class="modal" style="max-width: 580px;">
+        <div class="modal-header">
+            <h3 style="display: inline-flex; align-items: center; gap: 6px; color: var(--accent-danger);">
+                <span class="material-symbols-outlined">delete_sweep</span>
+                <span>Clear / Reset Data (Year Change)</span>
+            </h3>
+            <button class="btn btn-ghost" onclick="closeModal('clearDataModal')"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div>
+            <!-- Quick Excel Export Step before Clear -->
+            <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-md); margin-bottom: var(--space-md);">
+                <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--accent-primary);">download</span>
+                    <span>Step 1: Download Master Excel Files (Recommended)</span>
+                </div>
+                <p class="text-muted text-xs mb-sm">Export complete copies of your master student directory and entry logs before clearing.</p>
+                <div class="flex gap-sm" style="flex-wrap: wrap;">
+                    <a href="/api/export/students/excel" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">table_view</span>
+                        <span>Master Student Excel</span>
+                    </a>
+                    <a href="/api/export/excel" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">receipt_long</span>
+                        <span>Master Entry Logs Excel</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Clear Scope Selection -->
+            <div class="form-group mb-md">
+                <label style="font-weight: 600; font-size: 0.9rem; margin-bottom: var(--space-xs); display: block;">Step 2: Select What to Clear in One Go</label>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+                        <input type="radio" name="clearTarget" value="students" checked style="margin-top: 3px;">
+                        <div>
+                            <strong style="font-size: 0.9rem;">Clear Master Student Directory & Records</strong>
+                            <p class="text-muted text-xs" style="margin: 2px 0 0 0;">Wipes all registered student profiles so you can import the new academic year batch.</p>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+                        <input type="radio" name="clearTarget" value="logs" style="margin-top: 3px;">
+                        <div>
+                            <strong style="font-size: 0.9rem;">Clear Activity Logs & Class Sessions Only</strong>
+                            <p class="text-muted text-xs" style="margin: 2px 0 0 0;">Clears all past attendance and session history, keeping registered students intact.</p>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+                        <input type="radio" name="clearTarget" value="all" style="margin-top: 3px;">
+                        <div>
+                            <strong style="font-size: 0.9rem; color: var(--accent-danger);">Complete Fresh Reset (Wipe Everything)</strong>
+                            <p class="text-muted text-xs" style="margin: 2px 0 0 0;">Clears all students, past attendance records, and class sessions for a clean slate.</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Password Protection -->
+            <div class="form-group mb-lg">
+                <label for="clearAdminPassword" style="font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--accent-warning);">lock</span>
+                    <span>Step 3: Enter Admin Password to Authorize</span>
+                </label>
+                <input type="password" id="clearAdminPassword" class="form-input" placeholder="Admin password (default: admin)" autocomplete="current-password">
+                <p class="text-muted text-xs mt-xs">Required to prevent unauthorized data removal.</p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('clearDataModal')">Cancel</button>
+                <button type="button" class="btn btn-danger" id="clearDataSubmitBtn" onclick="submitClearData()" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined">delete_forever</span>
+                    <span>Clear Selected Data in One Go</span>
+                </button>
             </div>
         </div>
     </div>
@@ -136,5 +324,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/admin.js"></script>
+<script src="/static/js/admin.js?v=6"></script>
 {% endblock %}

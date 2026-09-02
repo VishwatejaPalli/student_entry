@@ -1,62 +1,143 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard — Room Entry System{% endblock %}
+{% block title %}Live Dashboard — Room Entry System{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container container--wide">
     <!-- Header -->
     <div class="admin-header">
-        <h1>📊 Dashboard</h1>
+        <div>
+            <h1><span class="material-symbols-outlined" style="font-size: 1.8rem; vertical-align: middle; margin-right: 6px;">dashboard</span>Live Room & Lab Dashboard</h1>
+            <p class="text-secondary text-sm">Real-time room occupancy, live student activity, and visitor logs</p>
+        </div>
         <div class="admin-actions">
-            <button class="btn btn-secondary btn-sm" onclick="refreshDashboard()">↻ Refresh</button>
-            <a href="/" class="btn btn-primary btn-sm">+ New Entry</a>
+            <button class="btn btn-secondary btn-sm" onclick="refreshDashboard()" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined">refresh</span><span>Refresh</span></button>
+            <a href="/" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined">add</span><span>New Entry</span></a>
         </div>
     </div>
 
-    <!-- Stats -->
-    <div class="stats-grid">
-        <div class="stat-card stat-card--primary">
-            <div class="stat-label">Currently Inside</div>
+    <!-- 4-Stat Metrics Grid -->
+    <div class="stats-grid mb-lg" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <div class="stat-card stat-card--success">
+            <div class="stat-label" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--accent-success);">login</span> Currently Inside</div>
             <div class="stat-value" id="statInside">{{ stats.currently_inside }}</div>
         </div>
-        <div class="stat-card stat-card--success">
-            <div class="stat-label">Today's Visits</div>
+        <div class="stat-card stat-card--primary">
+            <div class="stat-label" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1.1rem;">trending_up</span> Today's Visits</div>
             <div class="stat-value" id="statToday">{{ stats.today_visits }}</div>
         </div>
-    </div>
-
-    <!-- Quick Entry -->
-    <div class="card mb-lg">
-        <div class="flex items-center gap-md">
-            <input type="text" id="quickRollNo" class="form-input"
-                   placeholder="Quick scan / enter roll number..."
-                   style="max-width: 300px;">
-            <button class="btn btn-primary btn-sm" onclick="quickEntry()">Entry</button>
-            <button class="btn btn-secondary btn-sm" onclick="quickExit()">Exit</button>
-        </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="card mb-lg" style="padding: var(--space-md) var(--space-lg);">
-        <div class="flex items-center gap-md" style="flex-wrap: wrap;">
-            <div class="form-group" style="margin-bottom: 0; flex: 0 0 auto;">
-                <label style="margin-bottom: 2px;">Filter</label>
+        <div class="stat-card" style="border-top: 3px solid var(--accent-secondary);">
+            <div class="stat-label" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--accent-secondary);">school</span> Active Sessions</div>
+            <div class="stat-value" id="statActiveSessions" style="color: var(--accent-secondary); background: none; -webkit-text-fill-color: var(--accent-secondary);">
+                {{ stats.active_sessions }}
             </div>
-            <input type="text" id="filterRollNo" class="form-input" placeholder="Roll No..."
-                   style="max-width: 180px;">
-            <input type="date" id="filterDateFrom" class="form-input" style="max-width: 160px;">
-            <span class="text-muted">to</span>
-            <input type="date" id="filterDateTo" class="form-input" style="max-width: 160px;">
-            <button class="btn btn-secondary btn-sm" onclick="applyFilters()">Apply</button>
-            <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Clear</button>
+        </div>
+        <div class="stat-card" style="border-top: 3px solid var(--accent-info);">
+            <div class="stat-label" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--accent-info);">group</span> Total Students</div>
+            <div class="stat-value" id="statTotalStudents" style="color: var(--accent-info); background: none; -webkit-text-fill-color: var(--accent-info);">
+                {{ stats.total_students }}
+            </div>
         </div>
     </div>
 
-    <!-- Records Table -->
-    <div class="card">
+    <!-- Smart Quick Scan Card -->
+    <div class="card mb-lg" style="padding: var(--space-md) var(--space-lg);">
+        <form id="quickScanForm" onsubmit="handleQuickScan(event)">
+            <div class="flex items-center gap-md flex-wrap">
+                <div style="flex: 1; min-width: 260px;">
+                    <input type="text" id="quickRollNo" class="form-input"
+                           placeholder="Scan barcode or enter Roll Number (Auto-toggles Entry / Exit)..."
+                           autocomplete="off" autofocus>
+                </div>
+                <button type="submit" class="btn btn-primary" id="quickScanBtn" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined">flash_on</span>
+                    <span>Instant Check In / Out</span>
+                </button>
+            </div>
+        </form>
+        <div id="quickScanBanner" class="scan-feedback-banner mt-sm hidden"></div>
+    </div>
+
+    <!-- ── Currently Inside Live Roster ──────────────────────────── -->
+    <div class="card mb-xl">
         <div class="card-header">
-            <h2 class="card-title">Recent Records</h2>
-            <span class="text-sm text-muted" id="totalRecords">{{ pagination.total }} total</span>
+            <div>
+                <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="color: var(--accent-success);">sensors</span><span>Students Currently Inside (<span id="insideCountBadge">{{ inside_students | length }}</span>)</span></h3>
+                <span class="text-sm text-muted">Students present right now with elapsed time</span>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Roll No</th>
+                        <th>Student Name</th>
+                        <th>Department</th>
+                        <th>Batch</th>
+                        <th>Entry Time</th>
+                        <th>Duration in Lab</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="insideTableBody">
+                    {% for st in inside_students %}
+                    <tr id="inside-row-{{ st.roll_no }}">
+                        <td><strong>{{ st.roll_no }}</strong></td>
+                        <td>{{ st.student_name }}</td>
+                        <td>{{ st.department or '—' }}</td>
+                        <td>
+                            {% if st.batch %}
+                            <span class="badge badge--batch">{{ st.batch }}</span>
+                            {% else %}
+                            <span class="text-muted text-xs">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ st.entry_time[11:16] if st.entry_time else '—' }}</td>
+                        <td>
+                            <strong class="text-success">{{ st.duration_formatted }}</strong>
+                        </td>
+                        <td style="text-align: right;">
+                            <button type="button" class="btn btn-danger btn-sm" onclick="checkOutStudent('{{ st.roll_no }}')" style="display: inline-flex; align-items: center; gap: 4px;">
+                                <span class="material-symbols-outlined" style="font-size: 1rem;">logout</span>
+                                <span>Check Out</span>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% if not inside_students %}
+                    <tr id="noInsideRow">
+                        <td colspan="7">
+                            <div class="empty-state" style="padding: var(--space-lg);">
+                                <div class="icon"><span class="material-symbols-outlined" style="font-size: 3rem;">meeting_room</span></div>
+                                <p class="text-muted">No students are currently inside the room.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ── Activity Records & History ────────────────────────────── -->
+    <div class="card">
+        <div class="card-header flex-wrap gap-md">
+            <div>
+                <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">history</span><span>Recent Entry & Exit Logs</span></h3>
+                <span class="text-sm text-muted" id="totalRecords">{{ pagination.total }} total entries</span>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex items-center gap-sm flex-wrap">
+                <input type="text" id="filterRollNo" class="form-input" placeholder="Roll No..." style="max-width: 140px;" oninput="applyFiltersDebounced()">
+                <input type="date" id="filterDateFrom" class="form-input" style="max-width: 150px;" onchange="applyFilters()">
+                <span class="text-muted text-xs">to</span>
+                <input type="date" id="filterDateTo" class="form-input" style="max-width: 150px;" onchange="applyFilters()">
+                <button class="btn btn-secondary btn-sm" onclick="applyFilters()" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">filter_alt</span><span>Filter</span></button>
+                <button class="btn btn-ghost btn-sm" onclick="clearFilters()" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">close</span><span>Reset</span></button>
+            </div>
         </div>
 
         <div class="table-wrapper">
@@ -65,9 +146,10 @@
                     <tr>
                         <th>Roll No</th>
                         <th>Name</th>
+                        <th>Type / Session</th>
                         <th>Date</th>
-                        <th>Entry</th>
-                        <th>Exit</th>
+                        <th>Entry Time</th>
+                        <th>Exit Time</th>
                         <th>Duration</th>
                         <th>Status</th>
                         <th></th>
@@ -78,6 +160,13 @@
                     <tr class="clickable" data-record-id="{{ record.id }}">
                         <td><strong>{{ record.roll_no }}</strong></td>
                         <td>{{ record.student_name or '—' }}</td>
+                        <td>
+                            {% if record.is_session %}
+                                <span class="badge badge--batch" title="{{ record.session_name }}" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 0.9rem;">school</span><span>{{ record.session_name or 'Class Session' }}</span></span>
+                            {% else %}
+                                <span class="badge badge--individual" style="background: rgba(85, 72, 235, 0.1); color: var(--accent-primary); border: 1px solid var(--border-accent); display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 0.9rem;">person</span><span>Individual</span></span>
+                            {% endif %}
+                        </td>
                         <td>{{ record.entry_time[:10] if record.entry_time else '—' }}</td>
                         <td>{{ record.entry_time[11:16] if record.entry_time else '—' }}</td>
                         <td>{{ record.exit_time[11:16] if record.exit_time else '—' }}</td>
@@ -90,12 +179,16 @@
                             {% endif %}
                         </td>
                         <td>
-                            <button class="btn btn-ghost btn-sm" data-toggle-detail="{{ record.id }}">▾</button>
+                            {% if record.custom_fields %}
+                            <button type="button" class="btn btn-ghost btn-sm" data-record-id="{{ record.id }}" onclick="toggleDetailRow(this.dataset.recordId)" title="View Details" style="display: inline-flex; align-items: center; justify-content: center;">
+                                <span class="material-symbols-outlined" style="font-size: 1.1rem;">expand_more</span>
+                            </button>
+                            {% endif %}
                         </td>
                     </tr>
                     {% if record.custom_fields %}
                     <tr class="detail-row hidden" id="detail-{{ record.id }}">
-                        <td colspan="8">
+                        <td colspan="9">
                             <div class="detail-panel">
                                 <div class="detail-grid">
                                     {% for label, value in record.custom_fields.items() %}
@@ -113,10 +206,10 @@
 
                     {% if not records %}
                     <tr>
-                        <td colspan="8">
+                        <td colspan="9">
                             <div class="empty-state">
-                                <div class="icon">📋</div>
-                                <p>No records yet. Create an entry to get started.</p>
+                                <div class="icon"><span class="material-symbols-outlined" style="font-size: 3rem;">receipt_long</span></div>
+                                <p>No records found matching filters.</p>
                             </div>
                         </td>
                     </tr>

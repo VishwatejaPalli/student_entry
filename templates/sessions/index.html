@@ -7,12 +7,18 @@
     <!-- Header & Mode Switcher -->
     <div class="admin-header">
         <div>
-            <h1>🏫 Class Sessions & Bulk Entry</h1>
+            <h1><span class="material-symbols-outlined" style="font-size: 1.8rem; vertical-align: middle; margin-right: 6px;">school</span>Class Sessions & Bulk Entry</h1>
             <p class="text-secondary text-sm">Create live class scanning sessions or log bulk attendance instantly</p>
         </div>
-        <div class="mode-switch">
-            <a href="/" class="mode-switch-btn">👤 Individual Entry</a>
-            <a href="/sessions" class="mode-switch-btn active">🏫 Class Sessions</a>
+        <div class="flex items-center gap-sm">
+            <a href="/sessions/settings" class="btn btn-secondary btn-sm" title="Configure Rooms, Subjects, Faculty, Batches and Defaults" style="display: inline-flex; align-items: center; gap: 6px;">
+                <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"/></svg>
+                <span>Bulk Presets & Customizer</span>
+            </a>
+            <div class="mode-switch">
+                <a href="/" class="mode-switch-btn" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">person</span><span>Individual Entry</span></a>
+                <a href="/sessions" class="mode-switch-btn active" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">school</span><span>Class Sessions</span></a>
+            </div>
         </div>
     </div>
 
@@ -34,15 +40,15 @@
                     <span class="badge badge--in">LIVE</span>
                 </div>
                 <div class="text-sm text-secondary mb-md">
-                    <div>📚 {{ s.subject or 'Lab Session' }} &nbsp;•&nbsp; 📍 {{ s.room or 'Room' }}</div>
-                    <div>👨‍🏫 {{ s.faculty or 'Faculty' }} &nbsp;•&nbsp; ⏰ {{ s.scheduled_start[11:16] }} - {{ s.scheduled_end[11:16] }}</div>
+                    <div style="display: flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">menu_book</span><span>{{ s.subject or 'Lab Session' }}</span> &nbsp;•&nbsp; <span class="material-symbols-outlined" style="font-size: 1rem;">meeting_room</span><span>{{ s.room or 'Room' }}</span></div>
+                    <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">badge</span><span>{{ s.faculty or 'Faculty' }}</span> &nbsp;•&nbsp; <span class="material-symbols-outlined" style="font-size: 1rem;">schedule</span><span>{{ s.scheduled_start[11:16] }} - {{ s.scheduled_end[11:16] }}</span></div>
                 </div>
                 <div class="flex items-center justify-between pt-sm" style="border-top: 1px solid var(--border-subtle);">
                     <div class="text-sm">
                         <span class="text-success font-bold">{{ s.present_count }}</span> / {{ s.total_students }} present
                     </div>
-                    <a href="/sessions/live/{{ s.id }}" class="btn btn-success btn-sm">
-                        Open Cockpit →
+                    <a href="/sessions/live/{{ s.id }}" class="btn btn-success btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+                        <span>Open Cockpit →</span>
                     </a>
                 </div>
             </div>
@@ -53,14 +59,17 @@
 
     <!-- Hub Tabs -->
     <div class="session-tabs mb-lg">
-        <button class="session-tab-btn active" id="tabLiveBtn" onclick="switchSessionTab('live')">
-            ⚡ Start Live Class Session
+        <button class="session-tab-btn active" id="tabLiveBtn" onclick="switchSessionTab('live')" style="display: inline-flex; align-items: center; gap: 6px;">
+            <span class="material-symbols-outlined">flash_on</span>
+            <span>Start Live Class Session</span>
         </button>
-        <button class="session-tab-btn" id="tabBulkBtn" onclick="switchSessionTab('bulk')">
-            📝 Instant Bulk Entry (Past/Direct)
+        <button class="session-tab-btn" id="tabBulkBtn" onclick="switchSessionTab('bulk')" style="display: inline-flex; align-items: center; gap: 6px;">
+            <span class="material-symbols-outlined">playlist_add_check</span>
+            <span>Instant Bulk Entry (Past/Direct)</span>
         </button>
-        <button class="session-tab-btn" id="tabHistoryBtn" onclick="switchSessionTab('history')">
-            📜 Session History & Exports
+        <button class="session-tab-btn" id="tabHistoryBtn" onclick="switchSessionTab('history')" style="display: inline-flex; align-items: center; gap: 6px;">
+            <span class="material-symbols-outlined">history</span>
+            <span>Session History & Exports</span>
         </button>
     </div>
 
@@ -82,7 +91,7 @@
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
                     <label for="sessionClass">Class / Section</label>
-                    <input type="text" id="sessionClass" class="form-input" placeholder="e.g. ECE-A or CSE-3B" list="classList">
+                    <input type="text" id="sessionClass" class="form-input" placeholder="e.g. ECE-A or ECE-B" list="classList" oninput="onSessionClassInput(this.value)">
                     <datalist id="classList">
                         {% for c in classes %}
                         <option value="{{ c.class_name }}">{{ c.class_name }} ({{ c.student_count }} students)</option>
@@ -90,16 +99,41 @@
                     </datalist>
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
+                    <label for="sessionBatch">Batch</label>
+                    <input type="text" id="sessionBatch" class="form-input" placeholder="e.g. A1, A2, All" list="batchDatalist" oninput="onSessionBatchInput(this.value)">
+                    <datalist id="batchDatalist">
+                        <option value="ALL">All Batches</option>
+                        {% for b in session_config.batches %}
+                        <option value="{{ b }}">Batch {{ b }}</option>
+                        {% endfor %}
+                    </datalist>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
                     <label for="sessionSubject">Subject / Lab</label>
-                    <input type="text" id="sessionSubject" class="form-input" placeholder="e.g. VLSI Design">
+                    <input type="text" id="sessionSubject" class="form-input" placeholder="e.g. VLSI Design" list="subjectList">
+                    <datalist id="subjectList">
+                        {% for s in session_config.subjects %}
+                        <option value="{{ s }}"></option>
+                        {% endfor %}
+                    </datalist>
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
                     <label for="sessionRoom">Room / Lab No.</label>
-                    <input type="text" id="sessionRoom" class="form-input" placeholder="e.g. VLSI Lab 204">
+                    <input type="text" id="sessionRoom" class="form-input" placeholder="e.g. VLSI Lab 204" list="roomList">
+                    <datalist id="roomList">
+                        {% for r in session_config.rooms %}
+                        <option value="{{ r }}"></option>
+                        {% endfor %}
+                    </datalist>
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
                     <label for="sessionFaculty">Faculty / Incharge</label>
-                    <input type="text" id="sessionFaculty" class="form-input" placeholder="e.g. Dr. Kumar">
+                    <input type="text" id="sessionFaculty" class="form-input" placeholder="e.g. Dr. Kumar" list="facultyList">
+                    <datalist id="facultyList">
+                        {% for f in session_config.faculties %}
+                        <option value="{{ f }}"></option>
+                        {% endfor %}
+                    </datalist>
                 </div>
             </div>
 
@@ -118,26 +152,56 @@
                 </div>
                 <div class="form-group" id="lateThresholdGroup" style="margin-bottom: 0;">
                     <label for="lateThreshold">Late Threshold (mins)</label>
-                    <input type="number" id="lateThreshold" class="form-input" value="15" min="0" max="120" title="Minutes after start before scan is marked LATE">
+                    <input type="number" id="lateThreshold" class="form-input" value="{{ session_config.defaults.late_threshold_min or 15 }}" min="0" max="120" title="Minutes after start before scan is marked LATE">
                 </div>
             </div>
 
+            <!-- Optional Dynamic Session Custom Fields -->
+            {% if session_config.custom_fields %}
+            <div class="card card--glass mb-xl" style="padding: var(--space-lg);">
+                <div class="form-section-title" style="margin-bottom: var(--space-sm); display: inline-flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined">edit_note</span>
+                    <span>Session Custom Details (Admin Configured)</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-md);">
+                    {% for cf in session_config.custom_fields %}
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="cf_{{ cf.field_name }}">{{ cf.label }} {% if cf.required %}<span class="required-star">*</span>{% endif %}</label>
+                        {% if cf.field_type == 'dropdown' %}
+                        <select id="cf_{{ cf.field_name }}" name="cf_{{ cf.field_name }}" class="form-select session-custom-input" data-cf-name="{{ cf.field_name }}" {% if cf.required %}required{% endif %}>
+                            <option value="">-- Select {{ cf.label }} --</option>
+                            {% for opt in cf.options %}
+                            <option value="{{ opt }}">{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                        {% elif cf.field_type == 'textarea' %}
+                        <textarea id="cf_{{ cf.field_name }}" name="cf_{{ cf.field_name }}" class="form-textarea session-custom-input" rows="2" placeholder="{{ cf.placeholder }}" data-cf-name="{{ cf.field_name }}" {% if cf.required %}required{% endif %}></textarea>
+                        {% else %}
+                        <input type="{{ cf.field_type }}" id="cf_{{ cf.field_name }}" name="cf_{{ cf.field_name }}" class="form-input session-custom-input" placeholder="{{ cf.placeholder }}" data-cf-name="{{ cf.field_name }}" {% if cf.required %}required{% endif %}>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Smart PC Assignment Options -->
             <div class="card card--glass mb-xl" style="padding: var(--space-lg);">
-                <div class="form-section-title" style="margin-bottom: var(--space-sm);">
-                    🖥️ PC Assignment Strategy
+                <div class="form-section-title" style="margin-bottom: var(--space-sm); display: inline-flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined">computer</span>
+                    <span>PC Assignment Strategy</span>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-md); align-items: center;">
                     <div>
                         <select id="pcStrategy" class="form-select" onchange="togglePcPrefix(this.value)">
-                            <option value="none">No PC tracking</option>
-                            <option value="auto_sequential" selected>Assign automatically (Sequential)</option>
-                            <option value="manual">Enter / Edit manually</option>
+                            <option value="none" {% if session_config.defaults.pc_strategy == 'none' %}selected{% endif %}>No PC tracking</option>
+                            <option value="auto_sequential" {% if session_config.defaults.pc_strategy != 'none' and session_config.defaults.pc_strategy != 'manual' %}selected{% endif %}>Assign automatically (Sequential)</option>
+                            <option value="manual" {% if session_config.defaults.pc_strategy == 'manual' %}selected{% endif %}>Enter / Edit manually</option>
                         </select>
                     </div>
                     <div id="pcPrefixWrapper" class="flex items-center gap-sm">
                         <label for="pcPrefix" class="text-sm" style="margin-bottom: 0; white-space: nowrap;">Prefix:</label>
-                        <input type="text" id="pcPrefix" class="form-input" value="PC-" style="max-width: 100px;">
+                        <input type="text" id="pcPrefix" class="form-input" value="{{ session_config.defaults.pc_prefix or 'PC-' }}" style="max-width: 100px;">
                         <span class="text-muted text-sm">(e.g. PC-01, PC-02...)</span>
                     </div>
                 </div>
@@ -149,36 +213,50 @@
             </div>
 
             <div class="student-select-tabs mb-md">
-                <button type="button" class="sub-tab-btn active" id="subTabClass" onclick="switchStudentTab('class')">
-                    📋 Select from Class
+                <button type="button" class="sub-tab-btn active" id="subTabClass" onclick="switchStudentTab('class')" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined">format_list_bulleted</span>
+                    <span>Select from Class</span>
                 </button>
-                <button type="button" class="sub-tab-btn" id="subTabExcel" onclick="switchStudentTab('excel')">
-                    📁 Upload Excel / CSV
+                <button type="button" class="sub-tab-btn" id="subTabExcel" onclick="switchStudentTab('excel')" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined">upload_file</span>
+                    <span>Upload Excel / CSV</span>
                 </button>
-                <button type="button" class="sub-tab-btn" id="subTabPaste" onclick="switchStudentTab('paste')">
-                    ✍️ Paste Roll Numbers
+                <button type="button" class="sub-tab-btn" id="subTabPaste" onclick="switchStudentTab('paste')" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined">content_paste</span>
+                    <span>Paste Roll Numbers</span>
                 </button>
             </div>
 
-            <!-- Option A: Select from Class Roster -->
+            <!-- Option A: Select from Class Roster with Batch Labels -->
             <div id="paneClass" class="selector-pane">
                 <div class="flex items-center justify-between mb-sm flex-wrap gap-sm">
-                    <div class="flex items-center gap-md">
-                        <select id="classDropdown" class="form-select" style="max-width: 250px;" onchange="loadClassStudents(this.value)">
-                            <option value="">-- Choose Class --</option>
+                    <div class="flex items-center gap-md flex-wrap">
+                        <select id="classDropdown" class="form-select" style="min-width: 250px;" onchange="loadClassStudents(this.value)">
+                            <option value="">-- Choose Class / Section --</option>
                             {% for c in classes %}
                             <option value="{{ c.class_name }}">{{ c.class_name }} ({{ c.student_count }} students)</option>
                             {% endfor %}
                         </select>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="selectAllRoster(true)">Select All</button>
-                        <button type="button" class="btn btn-ghost btn-sm" onclick="selectAllRoster(false)">Deselect All</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="selectAllRoster(true)" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">done_all</span><span>Select All</span></button>
+                        <button type="button" class="btn btn-ghost btn-sm" onclick="selectAllRoster(false)" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">remove_done</span><span>Deselect All</span></button>
                     </div>
-                    <input type="text" id="rosterSearch" class="form-input" placeholder="Search student..." style="max-width: 220px;" oninput="filterRoster(this.value)">
+                    <input type="text" id="rosterSearch" class="form-input" placeholder="Search student by roll or name..." style="max-width: 260px;" oninput="filterRoster(this.value)">
+                </div>
+
+                <!-- ── Batch Labels / Pills Bar ────────────────────── -->
+                <div id="batchPillsBar" class="batch-pills-bar hidden">
+                    <span class="batch-pills-label" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">sell</span><span>Semester Batch:</span></span>
+                    <div id="batchPillsList" class="flex gap-xs items-center flex-wrap"></div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openBatchAllocatorModal()" style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px;" title="Divide 70 students into 2 or 3 batches and save permanently for the semester">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"/></svg>
+                        <span>Divide / Allocate Semester Batches</span>
+                    </button>
                 </div>
 
                 <div class="roster-checkbox-grid" id="rosterGrid">
-                    <div class="empty-state" style="padding: var(--space-lg); grid-column: 1 / -1;">
-                        <p class="text-muted">Select a class from the dropdown above to load students.</p>
+                    <div class="empty-state" style="padding: var(--space-xl); grid-column: 1 / -1;">
+                        <div class="icon"><span class="material-symbols-outlined" style="font-size: 3rem;">group</span></div>
+                        <p class="text-muted">Select a class from the dropdown above to load student rosters and batch labels.</p>
                     </div>
                 </div>
             </div>
@@ -186,7 +264,7 @@
             <!-- Option B: Upload Excel -->
             <div id="paneExcel" class="selector-pane hidden">
                 <div class="dropzone" id="fileDropzone">
-                    <div style="font-size: 2rem; margin-bottom: var(--space-xs);">📊</div>
+                    <div style="margin-bottom: var(--space-xs);"><span class="material-symbols-outlined" style="font-size: 2.5rem; color: var(--accent-primary);">upload_file</span></div>
                     <p><strong>Drag & Drop Excel (.xlsx, .xls) or CSV file</strong></p>
                     <p class="text-muted text-sm">or click to browse from your computer</p>
                     <input type="file" id="bulkFileInput" accept=".xlsx,.xls,.csv" style="display: none;" onchange="handleFileSelect(this.files)">
@@ -207,8 +285,9 @@
             <!-- Submit Buttons -->
             <div class="mt-xl pt-md" style="border-top: 1px solid var(--border-subtle);">
                 <div id="liveSubmitGroup">
-                    <button type="submit" class="btn btn-primary btn-lg btn-block" id="startLiveBtn">
-                        ⚡ Launch Live Scanner Cockpit →
+                    <button type="submit" class="btn btn-primary btn-lg btn-block" id="startLiveBtn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span class="material-symbols-outlined">rocket_launch</span>
+                        <span>Launch Live Scanner Cockpit →</span>
                     </button>
                     <p class="text-muted text-sm text-center mt-sm">Starts real-time session where students scan cards on arrival</p>
                 </div>
@@ -217,12 +296,13 @@
                     <div class="flex items-center gap-md mb-md">
                         <label class="text-sm" style="margin-bottom: 0;">Mark selected students as:</label>
                         <select id="bulkStatusSelect" class="form-select" style="max-width: 180px;">
-                            <option value="PRESENT" selected>Present (Attended)</option>
-                            <option value="LATE">Late</option>
+                            <option value="PRESENT" {% if session_config.defaults.bulk_status != 'LATE' %}selected{% endif %}>Present (Attended)</option>
+                            <option value="LATE" {% if session_config.defaults.bulk_status == 'LATE' %}selected{% endif %}>Late</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-success btn-lg btn-block" id="createBulkBtn">
-                        ✓ Create & Finalize Bulk Records
+                    <button type="submit" class="btn btn-success btn-lg btn-block" id="createBulkBtn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span class="material-symbols-outlined">fact_check</span>
+                        <span>Create & Finalize Bulk Records</span>
                     </button>
                     <p class="text-muted text-sm text-center mt-sm">Directly creates completed attendance records for all selected students</p>
                 </div>
@@ -233,7 +313,7 @@
     <!-- ── Tab 3: Session History ───────────────────────────── -->
     <div id="sessionHistoryCard" class="card hidden">
         <div class="card-header">
-            <h3 class="card-title">📜 Class Session History</h3>
+            <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">history</span><span>Class Session History</span></h3>
             <span class="text-sm text-muted">{{ past_sessions | length }} sessions</span>
         </div>
 
@@ -275,8 +355,9 @@
                                 {% if ps.status == 'ACTIVE' %}
                                 <a href="/sessions/live/{{ ps.id }}" class="btn btn-success btn-sm">Cockpit</a>
                                 {% endif %}
-                                <a href="/api/export/session/{{ ps.id }}/excel" class="btn btn-secondary btn-sm" title="Download Attendance Excel">
-                                    📊 Excel
+                                <a href="/api/export/session/{{ ps.id }}/excel" class="btn btn-secondary btn-sm" title="Download Attendance Excel" style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span class="material-symbols-outlined" style="font-size: 1rem;">table_view</span>
+                                    <span>Excel</span>
                                 </a>
                             </div>
                         </td>
@@ -287,7 +368,7 @@
                     <tr>
                         <td colspan="7">
                             <div class="empty-state">
-                                <div class="icon">🏫</div>
+                                <div class="icon"><span class="material-symbols-outlined" style="font-size: 3rem;">school</span></div>
                                 <p>No class sessions logged yet.</p>
                             </div>
                         </td>
@@ -295,6 +376,62 @@
                     {% endif %}
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Semester Batch Allocator Modal -->
+<div class="modal-overlay" id="batchAllocatorModal">
+    <div class="modal-card" style="max-width: 580px;">
+        <div class="modal-header">
+            <h3 style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">tune</span><span>Semester Lab Batch Allocator</span></h3>
+            <button class="modal-close" onclick="closeModal('batchAllocatorModal')"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div class="modal-body">
+            <p class="text-secondary text-sm mb-md">
+                Divide a class (e.g. 70 students) into fixed semester lab batches (Batch 1, Batch 2, Batch 3). Members stay in this batch for the entire semester.
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);" class="mb-md">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="allocatorClass">Target Class:</label>
+                    <input type="text" id="allocatorClass" class="form-input" readonly style="background: var(--bg-tertiary);">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="allocatorSplitCount">Number of Batches:</label>
+                    <select id="allocatorSplitCount" class="form-select" onchange="updateBatchAllocatorPreview()">
+                        <option value="2">2 Batches (e.g. ~35 students each)</option>
+                        <option value="3">3 Batches (e.g. ~24 students each)</option>
+                        <option value="4">4 Batches</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group mb-md">
+                <label for="allocatorPrefix">Batch Label Prefix:</label>
+                <select id="allocatorPrefix" class="form-select" onchange="updateBatchAllocatorPreview()">
+                    <option value="Batch ">"Batch 1", "Batch 2", "Batch 3"</option>
+                    <option value="A">"A1", "A2", "A3"</option>
+                    <option value="B">"B1", "B2", "B3"</option>
+                    <option value="Batch-">"Batch-1", "Batch-2"</option>
+                </select>
+            </div>
+
+            <!-- Live Allocation Preview Box -->
+            <div class="card card--glass mb-lg" style="padding: var(--space-md);">
+                <div class="text-xs font-bold uppercase text-muted mb-xs" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">analytics</span><span>Allocation Live Preview:</span></div>
+                <div id="allocatorPreviewList" class="flex flex-col gap-xs text-sm">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <div class="flex gap-sm justify-end">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('batchAllocatorModal')">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveBatchAllocBtn" onclick="saveSemesterBatchAllocation()" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM565-275q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z"/></svg>
+                    <span>Save to Semester Database</span>
+                </button>
+            </div>
         </div>
     </div>
 </div>

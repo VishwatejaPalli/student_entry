@@ -7,8 +7,8 @@
     <!-- Mode Switcher -->
     <div class="mode-switch-wrapper mb-lg">
         <div class="mode-switch">
-            <a href="/" class="mode-switch-btn active">👤 Individual Entry</a>
-            <a href="/sessions" class="mode-switch-btn">🏫 Class Sessions & Bulk</a>
+            <a href="/" class="mode-switch-btn active" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">person</span><span>Individual Entry</span></a>
+            <a href="/sessions" class="mode-switch-btn" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">school</span><span>Class Sessions</span></a>
         </div>
     </div>
 
@@ -16,32 +16,74 @@
         <div class="card entry-card" id="entryCard">
 
             {% if not show_form %}
-            <!-- ── Step 1: Roll Number Input ─────────────────── -->
+            <!-- ── Step 1: Roll Number Input / Barcode Scanner ──── -->
             <div id="stepIdentify">
                 <div class="card-header">
-                    <div class="entry-icon">📋</div>
+                    <div class="entry-icon" style="display: inline-flex; align-items: center; justify-content: center;"><span class="material-symbols-outlined" style="font-size: 2rem;">badge</span></div>
                     <h1>Room Access</h1>
                     <p class="entry-subtitle">Scan barcode or enter roll number to Enter or Exit</p>
                 </div>
 
                 <form id="identifyForm" autocomplete="off">
                     <div class="form-group">
-                        <label for="rollNoInput">Roll Number</label>
+                        <label for="rollNoInput">Student Roll Number</label>
                         <input type="text" id="rollNoInput" name="roll_no"
                                class="form-input form-input--large"
                                placeholder="e.g. 24885A0407"
                                autofocus required>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-lg btn-block" id="continueBtn">
-                        Continue →
+                    <button type="submit" class="btn btn-primary btn-lg btn-block" id="continueBtn" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                        <span class="material-symbols-outlined">flash_on</span>
+                        <span>Check In / Out →</span>
                     </button>
                 </form>
+            </div>
+
+            <!-- ── Step Entry: Rich Check-In Confirmation Screen ── -->
+            <div id="stepEntryMessage" class="hidden text-center">
+                <div class="card-header" style="flex-direction: column; align-items: center; border-bottom: none;">
+                    <div class="entry-icon" style="background: var(--gradient-primary); display: inline-flex; align-items: center; justify-content: center;"><span class="material-symbols-outlined" style="font-size: 2.2rem; color: #fff;">check_circle</span></div>
+                    <h1 id="entryGreeting">Welcome!</h1>
+                    <p class="entry-subtitle text-success" id="entrySubMessage">Check-in recorded successfully</p>
+                </div>
+
+                <div class="card card--glass mb-lg" style="padding: var(--space-lg); text-align: left;">
+                    <div class="detail-grid" style="grid-template-columns: 1fr 1fr;">
+                        <div class="detail-item">
+                            <span class="detail-label">Student</span>
+                            <span class="detail-value" id="entryStudentName">—</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Roll Number</span>
+                            <span class="detail-value" id="entryRollNo">—</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Department & Section</span>
+                            <span class="detail-value" id="entryDeptSec">—</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Batch</span>
+                            <span class="detail-value" id="entryBatch">—</span>
+                        </div>
+                    </div>
+                    <div class="mt-md pt-sm text-center" style="border-top: 1px solid var(--border-subtle);">
+                        <span class="detail-label">Check-in Time</span>
+                        <div class="stat-value" id="entryTimeVal" style="font-size: 1.5rem; color: var(--accent-primary); background: none; -webkit-text-fill-color: var(--accent-primary);">--:--</div>
+                    </div>
+                </div>
+
+                <div class="text-sm text-muted mb-md">
+                    Ready for next scan in <span id="entryCountdown" class="font-bold text-primary">3</span>s...
+                </div>
+                <button type="button" class="btn btn-secondary btn-block" onclick="resetToScanInput()">
+                    ← Scan Next Student Now
+                </button>
             </div>
 
             <!-- ── Step Exit: Rich Exit Message Screen ───────── -->
             <div id="stepExitMessage" class="hidden text-center">
                 <div class="card-header" style="flex-direction: column; align-items: center; border-bottom: none;">
-                    <div class="entry-icon" style="background: var(--gradient-success);">👋</div>
+                    <div class="entry-icon" style="background: var(--gradient-success); display: inline-flex; align-items: center; justify-content: center;"><span class="material-symbols-outlined" style="font-size: 2.2rem; color: #fff;">logout</span></div>
                     <h1 id="exitGreeting">Goodbye!</h1>
                     <p class="entry-subtitle text-success" id="exitSubMessage">Exit recorded successfully</p>
                 </div>
@@ -72,7 +114,7 @@
                 </div>
 
                 <div class="text-sm text-muted mb-md">
-                    Ready for next student in <span id="exitCountdown" class="font-bold text-primary">4</span>s...
+                    Ready for next student in <span id="exitCountdown" class="font-bold text-primary">3</span>s...
                 </div>
                 <button type="button" class="btn btn-secondary btn-block" onclick="resetToScanInput()">
                     ← Scan Next Student Now
@@ -83,7 +125,7 @@
             <!-- ── Step 2: Dynamic Form ──────────────────────── -->
             <div id="stepForm">
                 <div class="card-header">
-                    <div class="entry-icon">📝</div>
+                    <div class="entry-icon" style="display: inline-flex; align-items: center; justify-content: center;"><span class="material-symbols-outlined" style="font-size: 2rem;">edit_note</span></div>
                     <h1>{{ form.name }}</h1>
                     <p class="entry-subtitle">
                         {% if student.student_name %}
@@ -96,7 +138,7 @@
 
                 {% if student.is_inside %}
                 <div class="entry-status entry-status--inside">
-                    <p class="status-text">⚡ You are currently marked as INSIDE</p>
+                    <p class="status-text" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined">sensors</span> You are currently marked as INSIDE</p>
                     <p class="text-sm text-muted mt-sm">Submitting will record your exit first, then create a new entry.</p>
                 </div>
                 {% endif %}
@@ -107,8 +149,9 @@
                     {{ form_html | safe }}
 
                     <div class="mt-lg">
-                        <button type="submit" class="btn btn-success btn-lg btn-block" id="submitEntryBtn">
-                            ✓ Record Entry
+                        <button type="submit" class="btn btn-success btn-lg btn-block" id="submitEntryBtn" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                            <span class="material-symbols-outlined">how_to_reg</span>
+                            <span>Record Entry</span>
                         </button>
                     </div>
                     <div class="mt-md text-center">

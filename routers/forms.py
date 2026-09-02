@@ -354,3 +354,50 @@ async def api_activate_form(form_id: int):
         return JSONResponse({"success": True, "message": "Form activated"})
     finally:
         await db.close()
+
+
+@router.delete("/api/forms/{form_id}")
+async def api_delete_form(form_id: int):
+    """Delete a form and its form fields."""
+    db = await get_db()
+    try:
+        cursor = await db.execute("SELECT id, name, active FROM forms WHERE id = ?", (form_id,))
+        form = await cursor.fetchone()
+        if not form:
+            return JSONResponse({"error": "Form not found"}, status_code=404)
+
+        # Check total forms count
+        cursor_cnt = await db.execute("SELECT COUNT(*) as cnt FROM forms")
+        cnt_row = await cursor_cnt.fetchone()
+        total_forms = cnt_row["cnt"]
+
+        if total_forms <= 1:
+            return JSONResponse(
+                {"error": "Cannot delete the only remaining form. Create another form first."},
+                status_code=400
+            )
+
+        if form["active"] == 1:
+            return JSONResponse(
+                {"error": "Cannot delete the active form. Please set another form as Active first."},
+                status_code=400
+            )
+
+        # Clean up records referencing this form and their record_values
+        cursor_rec = await db.execute("SELECT id FROM records WHERE form_id = ?", (form_id,))
+        rec_rows = await cursor_rec.fetchall()
+        for rec in rec_rows:
+            await db.execute("DELETE FROM record_values WHERE record_id = ?", (rec["id"],))
+        await db.execute("DELETE FROM records WHERE form_id = ?", (form_id,))
+
+        # Delete form fields and form
+        await db.execute("DELETE FROM form_fields WHERE form_id = ?", (form_id,))
+        await db.execute("DELETE FROM forms WHERE id = ?", (form_id,))
+        await db.commit()
+
+        return JSONResponse({
+            "success": True,
+            "message": f"Form '{form['name']}' deleted successfully."
+        })
+    finally:
+        await db.close()

@@ -4,13 +4,16 @@ Sessions Router — Class Sessions & Bulk Entry endpoints and pages.
 Routes:
   GET  /sessions                   → Session Hub (Create Live, Bulk Log, Past Sessions)
   GET  /sessions/live/{session_id} → Live Session Cockpit
+  GET  /sessions/settings          → Customizable Session Presets & Settings Page
   POST /api/sessions               → Create session (Live or Bulk Log)
   GET  /api/sessions/active        → List active sessions
-  GET  /api/sessions/classes       → List classes & enrolled students
+  GET  /api/sessions/classes       → List classes, batches & enrolled students
   GET  /api/sessions/{id}          → Session details & student roster
   POST /api/sessions/{id}/scan     → Process barcode scan / check-in
   PUT  /api/sessions/{id}/students/{roll_no} → Update student status / PC
   POST /api/sessions/{id}/end      → End & finalize active session
+  GET  /api/sessions/settings      → Get session customization presets
+  POST /api/sessions/settings      → Save session customization presets
 """
 
 from fastapi import APIRouter, Request, Query, UploadFile, File
@@ -25,6 +28,8 @@ from models import (
     SessionCreate,
     SessionScanRequest,
     SessionStudentUpdate,
+    SessionConfigModel,
+    BatchAssignRequest,
 )
 from services.session_service import (
     create_session,
@@ -35,6 +40,8 @@ from services.session_service import (
     get_all_sessions,
     get_session_details,
     get_classes_list,
+    get_session_config,
+    save_session_config,
 )
 
 router = APIRouter()
@@ -51,11 +58,16 @@ async def sessions_hub_page(request: Request):
         classes = await get_classes_list(db)
         active_sessions = await get_active_sessions(db)
         past_sessions = await get_all_sessions(db, limit=20)
+        session_config = await get_session_config(db)
+
+        departments = sorted(list(set(c["department"] for c in classes if c.get("department"))))
 
         return templates.TemplateResponse(request, name="sessions/index.html", context={
             "classes": classes,
+            "departments": departments,
             "active_sessions": active_sessions,
             "past_sessions": past_sessions,
+            "session_config": session_config,
         })
     finally:
         await db.close()
@@ -77,15 +89,56 @@ async def live_session_page(request: Request, session_id: int):
         await db.close()
 
 
+@router.get("/sessions/settings", response_class=HTMLResponse)
+async def session_settings_page(request: Request):
+    """Customizable Bulk Entry & Session Presets/Settings page."""
+    db = await get_db()
+    try:
+        session_config = await get_session_config(db)
+        return templates.TemplateResponse(request, name="sessions/settings.html", context={
+            "session_config": session_config,
+        })
+    finally:
+        await db.close()
+
+
 # ── API Endpoints ─────────────────────────────────────────────────
 
 @router.get("/api/sessions/classes")
 async def api_get_classes():
-    """Get list of classes and their student rosters."""
+    """Get list of classes, batches, and student rosters."""
     db = await get_db()
     try:
         classes = await get_classes_list(db)
         return JSONResponse(content=classes)
+    finally:
+        await db.close()
+
+
+@router.get("/api/sessions/settings")
+async def api_get_session_settings():
+    """Get customizable session presets and options."""
+    db = await get_db()
+    try:
+        config = await get_session_config(db)
+        return JSONResponse(content=config)
+    finally:
+        await db.close()
+
+
+@router.post("/api/sessions/settings")
+async def api_save_session_settings(data: SessionConfigModel):
+    """Save customizable session presets, batch lists, and dynamic fields."""
+    db = await get_db()
+    try:
+        saved = await save_session_config(db, data.model_dump())
+        return JSONResponse({
+            "success": True,
+            "message": "Bulk session settings saved successfully",
+            "config": saved,
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
     finally:
         await db.close()
 
@@ -147,7 +200,7 @@ async def api_session_scan(session_id: int, data: SessionScanRequest):
             db=db,
             session_id=session_id,
             roll_no=data.roll_no,
-            pc_override=data.pc_assigned,
+            manual_pc=data.pc_assigned,
         )
         return JSONResponse(content=result)
     finally:
@@ -169,6 +222,8 @@ async def api_update_student_in_session(
             roll_no=roll_no,
             status=data.status,
             pc_assigned=data.pc_assigned,
+            actual_entry=data.actual_entry,
+            actual_exit=data.actual_exit,
         )
         if not ok:
             return JSONResponse({"error": "No updates specified"}, status_code=400)
@@ -237,3 +292,23 @@ async def api_parse_session_file(file: UploadFile = File(...)):
         })
     except Exception as e:
         return JSONResponse({"error": f"Failed to parse file: {str(e)}"}, status_code=400)
+
+
+@router.post("/api/sessions/assign-batches")
+async def api_assign_batches(data: BatchAssignRequest):
+    """Permanently divide and allocate class students into semester batches in the database."""
+    from services.session_service import assign_batches_to_class
+    db = await get_db()
+    try:
+        result = await assign_batches_to_class(
+            db=db,
+            class_name=data.class_name,
+            split_count=data.split_count,
+            prefix=data.prefix,
+            ranges=data.ranges,
+        )
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        await db.close()

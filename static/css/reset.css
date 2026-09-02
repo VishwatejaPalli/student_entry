@@ -1,0 +1,20 @@
+/* ═══════════════════════════════════════════════════════════════
+   CSS Reset
+   ═══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+body {
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+}

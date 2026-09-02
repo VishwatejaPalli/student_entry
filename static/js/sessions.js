@@ -1,16 +1,23 @@
 /**
- * Sessions.js — Class Sessions Hub & Bulk Entry logic
+ * Sessions.js — Class Sessions Hub & Bulk Entry logic with direct Class & Semester Batch Selection
  *
  * Features:
- *   - Live Class creation vs Immediate Bulk logging
- *   - 3 student selection modes: Class roster, Excel upload, Multiline Paste
+ *   - Auto-loads initial class & batch pills on page load so batches are immediately visible
+ *   - Fixed Semester Batch Partitioning (e.g. 70 students divided into 2 or 3 batches)
+ *   - 1-Click Save to SQLite Semester Database
+ *   - 2-way synchronization between Section 1 (Class/Batch inputs) and Section 2 (Roster & Batch Pills)
+ *   - 1-Click Batch Filtering & Auto-Selection
  *   - Auto PC assignment configuration
+ *   - Customizable session dynamic fields
  *   - Session history
  */
 
 let classesData = [];
 let selectedStudentsSet = new Set();
 let currentSelectionMode = 'class'; // 'class', 'excel', 'paste'
+
+let currentLoadedClass = null;
+let currentActiveBatch = 'ALL';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Load embedded classes data
@@ -48,6 +55,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (form) {
         form.addEventListener('submit', handleSessionSubmit);
     }
+
+    // Automatically select the first class (e.g. ECE-A) if available so batches and roster are immediately visible
+    if (classesData.length > 0) {
+        const firstClass = classesData.find(c => c.class_name !== 'General') || classesData[0];
+        const classDropdown = document.getElementById('classDropdown');
+        if (classDropdown) {
+            classDropdown.value = firstClass.class_name;
+        }
+        loadClassStudents(firstClass.class_name);
+    }
 });
 
 
@@ -67,7 +84,6 @@ function switchSessionTab(tab) {
     const bulkSubmit = document.getElementById('bulkSubmitGroup');
     const lateGroup = document.getElementById('lateThresholdGroup');
 
-    // Reset button states
     liveBtn?.classList.remove('active');
     bulkBtn?.classList.remove('active');
     historyBtn?.classList.remove('active');
@@ -124,41 +140,94 @@ function switchStudentTab(mode) {
 }
 
 
-// ── Class Roster Selection ───────────────────────────────────────
+// ── Two-Way Synchronized Inputs in Section 1 ─────────────────────
+
+function onSessionClassInput(val) {
+    const classObj = classesData.find(c => c.class_name.toUpperCase() === val.trim().toUpperCase());
+    if (classObj) {
+        const classDropdown = document.getElementById('classDropdown');
+        if (classDropdown) classDropdown.value = classObj.class_name;
+        loadClassStudents(classObj.class_name);
+    }
+}
+
+function onSessionBatchInput(val) {
+    const b = val.trim().toUpperCase();
+    if (!b || b === 'ALL' || b === 'ALL BATCHES') {
+        filterByBatch('ALL');
+    } else {
+        filterByBatch(b);
+    }
+}
+
+
+// ── Class Roster Selection & Batch Labels ────────────────────────
 
 function loadClassStudents(className) {
     const grid = document.getElementById('rosterGrid');
+    const pillsBar = document.getElementById('batchPillsBar');
+    const classDropdown = document.getElementById('classDropdown');
     if (!grid) return;
 
+    if (classDropdown && classDropdown.value !== className) {
+        classDropdown.value = className;
+    }
+
     if (!className) {
-        grid.innerHTML = `<div class="empty-state" style="padding: var(--space-lg); grid-column: 1 / -1;"><p class="text-muted">Select a class from the dropdown above to load students.</p></div>`;
+        currentLoadedClass = null;
+        pillsBar?.classList.add('hidden');
+        grid.innerHTML = `
+            <div class="empty-state" style="padding: var(--space-xl); grid-column: 1 / -1;">
+                <div class="icon"><span class="material-symbols-outlined" style="font-size: 3rem;">group</span></div>
+                <p class="text-muted">Select a class from the dropdown above to load student rosters and batch labels.</p>
+            </div>`;
+        selectedStudentsSet.clear();
+        updateSelectedCount();
         return;
     }
 
     const classObj = classesData.find(c => c.class_name === className);
     if (!classObj || !classObj.students.length) {
-        grid.innerHTML = `<div class="empty-state" style="padding: var(--space-lg); grid-column: 1 / -1;"><p class="text-muted">No students found registered under ${className}.</p></div>`;
+        currentLoadedClass = classObj || { class_name: className, students: [], batches: [] };
+        pillsBar?.classList.add('hidden');
+        grid.innerHTML = `
+            <div class="empty-state" style="padding: var(--space-xl); grid-column: 1 / -1;">
+                <div class="icon"><span class="material-symbols-outlined" style="font-size: 3rem;">group</span></div>
+                <p class="text-muted">No students registered under ${className}.</p>
+            </div>`;
+        selectedStudentsSet.clear();
+        updateSelectedCount();
         return;
     }
 
-    // Auto-fill session class & name if empty
+    currentLoadedClass = classObj;
+    currentActiveBatch = 'ALL';
+
+    // Auto-fill Section 1 class & name
     const classInput = document.getElementById('sessionClass');
-    if (classInput && !classInput.value) classInput.value = className;
+    if (classInput) classInput.value = className;
 
     const nameInput = document.getElementById('sessionName');
-    if (nameInput && !nameInput.value) nameInput.value = `${className} Lab Session`;
+    if (nameInput) nameInput.value = `${className} Lab Session`;
 
-    // Clear set and select all by default for this class
+    const batchInput = document.getElementById('sessionBatch');
+    if (batchInput) batchInput.value = 'All Batches';
+
+    // Clear set and select all by default
     selectedStudentsSet.clear();
     let html = '';
 
     for (const st of classObj.students) {
         selectedStudentsSet.add(st.roll_no);
+        const batchTag = st.batch ? `<span class="badge badge--batch" style="margin-left: auto;">${st.batch}</span>` : '';
         html += `
-        <label class="roster-item-card selected" id="card-${st.roll_no}" onclick="toggleRosterItem('${st.roll_no}', event)">
+        <label class="roster-item-card selected" id="card-${st.roll_no}" data-batch="${st.batch || ''}" onclick="toggleRosterItem('${st.roll_no}', event)">
             <input type="checkbox" value="${st.roll_no}" checked onclick="event.stopPropagation(); toggleRosterItem('${st.roll_no}')">
-            <div class="roster-item-info">
-                <span class="roster-item-roll">${st.roll_no}</span>
+            <div class="roster-item-info" style="flex: 1;">
+                <div class="flex items-center justify-between">
+                    <span class="roster-item-roll">${st.roll_no}</span>
+                    ${batchTag}
+                </div>
                 <span class="roster-item-name">${st.name || '—'}</span>
             </div>
         </label>`;
@@ -166,7 +235,196 @@ function loadClassStudents(className) {
 
     grid.innerHTML = html;
     updateSelectedCount();
+
+    // Render Batch Labels / Filter Pills immediately
+    renderBatchPills(classObj);
 }
+
+function renderBatchPills(classObj) {
+    const pillsBar = document.getElementById('batchPillsBar');
+    const pillsList = document.getElementById('batchPillsList');
+    if (!pillsBar || !pillsList) return;
+
+    const batches = classObj.batches || [];
+    currentActiveBatch = 'ALL';
+
+    // Count per batch
+    const batchCounts = {};
+    classObj.students.forEach(st => {
+        const b = st.batch || 'Unassigned';
+        batchCounts[b] = (batchCounts[b] || 0) + 1;
+    });
+
+    let pillsHtml = `
+        <button type="button" class="batch-pill active" id="pill-ALL" onclick="filterByBatch('ALL')">
+            All Students <span class="pill-count">${classObj.students.length}</span>
+        </button>
+    `;
+
+    batches.forEach(b => {
+        const count = batchCounts[b] || 0;
+        pillsHtml += `
+            <button type="button" class="batch-pill" id="pill-${b}" onclick="filterByBatch('${b}')">
+                ${b.startsWith('Batch') ? b : 'Batch ' + b} <span class="pill-count">${count}</span>
+            </button>
+        `;
+    });
+
+    pillsList.innerHTML = pillsHtml;
+    pillsBar.classList.remove('hidden');
+}
+
+function filterByBatch(batchName) {
+    currentActiveBatch = batchName;
+    document.querySelectorAll('.batch-pill').forEach(btn => btn.classList.remove('active'));
+
+    const activePill = document.getElementById(`pill-${batchName}`);
+    if (activePill) activePill.classList.add('active');
+
+    const grid = document.getElementById('rosterGrid');
+    if (!grid || !currentLoadedClass) return;
+
+    selectedStudentsSet.clear();
+
+    grid.querySelectorAll('.roster-item-card').forEach(card => {
+        const cardBatch = (card.getAttribute('data-batch') || '').toUpperCase();
+        const bTarget = batchName.toUpperCase();
+        const cb = card.querySelector('input[type="checkbox"]');
+        const roll = cb?.value;
+
+        // Match exact batch or variations like "1" vs "BATCH 1" vs "A1"
+        const isMatch = (bTarget === 'ALL') ||
+                        (cardBatch === bTarget) ||
+                        (cardBatch.replace('BATCH ', '') === bTarget.replace('BATCH ', '')) ||
+                        (cardBatch.replace('BATCH-', '') === bTarget.replace('BATCH-', ''));
+
+        if (isMatch) {
+            card.style.display = 'flex';
+            card.classList.add('selected');
+            if (cb) cb.checked = true;
+            if (roll) selectedStudentsSet.add(roll);
+        } else {
+            card.style.display = 'none';
+            card.classList.remove('selected');
+            if (cb) cb.checked = false;
+        }
+    });
+
+    // Auto-update Session 1 inputs
+    const batchInput = document.getElementById('sessionBatch');
+    if (batchInput) {
+        batchInput.value = batchName === 'ALL' ? 'All Batches' : batchName;
+    }
+
+    const nameInput = document.getElementById('sessionName');
+    if (nameInput && currentLoadedClass) {
+        if (batchName !== 'ALL') {
+            const bLabel = batchName.startsWith('Batch') ? batchName : `Batch ${batchName}`;
+            nameInput.value = `${currentLoadedClass.class_name} ${bLabel} Lab`;
+        } else {
+            nameInput.value = `${currentLoadedClass.class_name} Lab Session`;
+        }
+    }
+
+    updateSelectedCount();
+}
+
+
+// ── Semester Batch Allocator Modal ───────────────────────────────
+
+function openBatchAllocatorModal() {
+    if (!currentLoadedClass || !currentLoadedClass.students.length) {
+        showToast('Please select a class with registered students first', 'info');
+        return;
+    }
+
+    const classInput = document.getElementById('allocatorClass');
+    if (classInput) classInput.value = currentLoadedClass.class_name;
+
+    updateBatchAllocatorPreview();
+    openModal('batchAllocatorModal');
+}
+
+function updateBatchAllocatorPreview() {
+    const listEl = document.getElementById('allocatorPreviewList');
+    if (!listEl || !currentLoadedClass || !currentLoadedClass.students.length) return;
+
+    const splitCount = parseInt(document.getElementById('allocatorSplitCount')?.value || '2');
+    const prefix = document.getElementById('allocatorPrefix')?.value || 'Batch ';
+    const students = currentLoadedClass.students;
+    const total = students.length;
+    const chunkSize = Math.ceil(total / splitCount);
+
+    let previewHtml = '';
+    for (let b = 1; b <= splitCount; b++) {
+        const startIdx = (b - 1) * chunkSize;
+        const endIdx = Math.min(total, b * chunkSize);
+        if (startIdx < total) {
+            const count = endIdx - startIdx;
+            const firstRoll = students[startIdx]?.roll_no;
+            const lastRoll = students[endIdx - 1]?.roll_no;
+            const bName = `${prefix}${b}`;
+
+            previewHtml += `
+                <div class="flex items-center justify-between p-xs" style="background: var(--bg-tertiary); border-radius: var(--radius-sm);">
+                    <div>
+                        <strong class="text-primary">${bName}</strong>
+                        <span class="text-secondary text-xs">(${count} students)</span>
+                    </div>
+                    <span class="text-muted text-xs font-mono">${firstRoll} ... ${lastRoll}</span>
+                </div>
+            `;
+        }
+    }
+
+    listEl.innerHTML = previewHtml;
+}
+
+async function saveSemesterBatchAllocation() {
+    if (!currentLoadedClass || !currentLoadedClass.students.length) return;
+
+    const splitCount = parseInt(document.getElementById('allocatorSplitCount')?.value || '2');
+    const prefix = document.getElementById('allocatorPrefix')?.value || 'Batch ';
+    const className = currentLoadedClass.class_name;
+
+    const btn = document.getElementById('saveBatchAllocBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Saving to Database...';
+    }
+
+    try {
+        const result = await apiCall('/api/sessions/assign-batches', 'POST', {
+            class_name: className,
+            split_count: splitCount,
+            prefix: prefix,
+        });
+
+        showToast(result.message || 'Semester batches saved', 'success');
+        closeModal('batchAllocatorModal');
+
+        // Refresh class list from database
+        const freshClasses = await apiCall('/api/sessions/classes');
+        classesData = freshClasses;
+
+        // Re-load the class roster with the new persistent batches
+        loadClassStudents(className);
+
+        // Filter to Batch 1 by default
+        const firstBatch = `${prefix}1`;
+        filterByBatch(firstBatch);
+    } catch (err) {
+        showToast(err.message || 'Failed to save batch allocation', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM565-275q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z"/></svg><span>Save to Semester Database</span>';
+        }
+    }
+}
+
+
+// ── Roster Item Toggling ─────────────────────────────────────────
 
 function toggleRosterItem(rollNo, event) {
     if (event && event.target.tagName === 'INPUT') return;
@@ -192,17 +450,19 @@ function selectAllRoster(select) {
     if (!grid) return;
 
     grid.querySelectorAll('.roster-item-card').forEach(card => {
-        const cb = card.querySelector('input[type="checkbox"]');
-        const roll = cb?.value;
-        if (roll) {
-            if (select) {
-                selectedStudentsSet.add(roll);
-                card.classList.add('selected');
-                if (cb) cb.checked = true;
-            } else {
-                selectedStudentsSet.delete(roll);
-                card.classList.remove('selected');
-                if (cb) cb.checked = false;
+        if (card.style.display !== 'none') {
+            const cb = card.querySelector('input[type="checkbox"]');
+            const roll = cb?.value;
+            if (roll) {
+                if (select) {
+                    selectedStudentsSet.add(roll);
+                    card.classList.add('selected');
+                    if (cb) cb.checked = true;
+                } else {
+                    selectedStudentsSet.delete(roll);
+                    card.classList.remove('selected');
+                    if (cb) cb.checked = false;
+                }
             }
         }
     });
@@ -216,8 +476,15 @@ function filterRoster(query) {
     if (!grid) return;
 
     grid.querySelectorAll('.roster-item-card').forEach(card => {
+        const cardBatch = (card.getAttribute('data-batch') || '').toUpperCase();
+        const bTarget = currentActiveBatch.toUpperCase();
+        const isMatchBatch = (bTarget === 'ALL') ||
+                             (cardBatch === bTarget) ||
+                             (cardBatch.replace('BATCH ', '') === bTarget.replace('BATCH ', ''));
+
         const text = card.textContent.toUpperCase();
-        if (!q || text.includes(q)) {
+
+        if (isMatchBatch && (!q || text.includes(q))) {
             card.style.display = 'flex';
         } else {
             card.style.display = 'none';
@@ -248,7 +515,7 @@ function setupDropzone() {
     dropzone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropzone.classList.remove('drag-over');
-        if (e.dataTransfer.files.length) {
+        if (e.dataTransfer.files && e.dataTransfer.files.length) {
             handleFileSelect(e.dataTransfer.files);
         }
     });
@@ -257,55 +524,49 @@ function setupDropzone() {
 async function handleFileSelect(files) {
     if (!files || !files.length) return;
     const file = files[0];
+
     const resultBox = document.getElementById('fileUploadResult');
-
-    const formData = new FormData();
-    formData.append('file', file);
-
     if (resultBox) {
         resultBox.classList.remove('hidden');
-        resultBox.innerHTML = `<span class="text-secondary">⏳ Parsing ${file.name}...</span>`;
+        resultBox.innerHTML = `<p class="text-secondary">⏳ Parsing ${file.name}...</p>`;
     }
 
     try {
-        const response = await fetch('/api/sessions/parse-file', {
-            method: 'POST',
-            body: formData,
-        });
-        const data = await response.json();
+        const result = await apiUpload('/api/sessions/parse-file', file);
+        if (result.success) {
+            selectedStudentsSet.clear();
+            result.roll_numbers.forEach(r => selectedStudentsSet.add(r));
 
-        if (!response.ok) throw new Error(data.error || 'Failed to parse file');
-
-        selectedStudentsSet.clear();
-        data.roll_numbers.forEach(r => selectedStudentsSet.add(r));
-
-        if (resultBox) {
-            resultBox.innerHTML = `
-                <div class="flex items-center justify-between">
-                    <div>
-                        <strong class="text-success">✓ ${data.count} roll numbers parsed from ${file.name}</strong>
-                        <div class="text-xs text-muted mt-xs">${data.roll_numbers.slice(0, 8).join(', ')}${data.count > 8 ? '...' : ''}</div>
+            if (resultBox) {
+                resultBox.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="material-symbols-outlined text-success" style="font-size: 1.5rem;">check_circle</span>
+                            <div>
+                                <strong class="text-success">Loaded ${result.count} roll numbers</strong>
+                                <p class="text-muted text-sm">${file.name}</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-ghost btn-sm" onclick="clearUploadedFile()">Change</button>
                     </div>
-                    <button type="button" class="btn btn-ghost btn-sm text-danger" onclick="clearUploadedFile()">Clear</button>
-                </div>
-            `;
+                `;
+            }
+            updateSelectedCount();
+            showToast(`Loaded ${result.count} students from ${file.name}`, 'success');
         }
-        updateSelectedCount();
-        showToast(`${data.count} roll numbers loaded from file`, 'success');
     } catch (err) {
         if (resultBox) {
-            resultBox.innerHTML = `<span class="text-danger">✕ Error: ${err.message}</span>`;
+            resultBox.innerHTML = `<p class="text-danger" style="display: flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined">error</span><span>${err.message}</span></p>`;
         }
-        showToast(err.message, 'error');
     }
 }
 
 function clearUploadedFile() {
-    selectedStudentsSet.clear();
-    const resultBox = document.getElementById('fileUploadResult');
-    if (resultBox) resultBox.classList.add('hidden');
     const input = document.getElementById('bulkFileInput');
     if (input) input.value = '';
+    const resultBox = document.getElementById('fileUploadResult');
+    if (resultBox) resultBox.classList.add('hidden');
+    selectedStudentsSet.clear();
     updateSelectedCount();
 }
 
@@ -313,10 +574,19 @@ function clearUploadedFile() {
 // ── Paste Roll Numbers ───────────────────────────────────────────
 
 function parsePastedRolls(text) {
-    if (currentSelectionMode !== 'paste') return;
+    if (!text) {
+        selectedStudentsSet.clear();
+        updateSelectedCount();
+        const statsEl = document.getElementById('pasteStats');
+        if (statsEl) statsEl.textContent = '0 roll numbers detected';
+        return;
+    }
 
     selectedStudentsSet.clear();
-    const tokens = text.split(/[\n,;\s]+/).map(t => t.trim().toUpperCase()).filter(t => t.length >= 4);
+    const tokens = text
+        .split(/[\n,\s\t]+/)
+        .map(t => t.trim().toUpperCase())
+        .filter(t => t.length >= 3);
 
     tokens.forEach(r => selectedStudentsSet.add(r));
 
@@ -369,6 +639,15 @@ async function handleSessionSubmit(e) {
     const pcPrefix = document.getElementById('pcPrefix')?.value.trim() || 'PC-';
     const bulkStatus = document.getElementById('bulkStatusSelect')?.value || 'PRESENT';
 
+    // Collect custom fields if any
+    const customFields = {};
+    document.querySelectorAll('.session-custom-input').forEach(input => {
+        const name = input.getAttribute('data-cf-name');
+        if (name && input.value.trim()) {
+            customFields[name] = input.value.trim();
+        }
+    });
+
     if (!sessionName) {
         showToast('Please enter a Session Name', 'error');
         return;
@@ -416,6 +695,7 @@ async function handleSessionSubmit(e) {
             students: studentRolls,
             is_completed_bulk: isCompleted,
             bulk_status: bulkStatus,
+            custom_fields: customFields,
         };
 
         const result = await apiCall('/api/sessions', 'POST', payload);
@@ -427,7 +707,9 @@ async function handleSessionSubmit(e) {
     } catch (err) {
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = isCompleted ? '✓ Create & Finalize Bulk Records' : '⚡ Launch Live Scanner Cockpit →';
+            submitBtn.innerHTML = isCompleted
+                ? `<span class="material-symbols-outlined">fact_check</span><span>Create & Finalize Bulk Records</span>`
+                : `<span class="material-symbols-outlined">rocket_launch</span><span>Launch Live Scanner Cockpit →</span>`;
         }
     }
 }

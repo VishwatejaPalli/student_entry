@@ -3,21 +3,27 @@
 {% block title %}Form Builder — Room Entry System{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container container--wide">
 
     {% if mode == 'list' %}
-    <!-- ── Forms List ────────────────────────────────────── -->
+    <!-- ── Form List ─────────────────────────────────────── -->
     <div class="admin-header">
-        <h1>🛠️ Form Builder</h1>
+        <div>
+            <h1><span class="material-symbols-outlined" style="font-size: 1.8rem; vertical-align: middle; margin-right: 6px;">design_services</span>Forms Management</h1>
+            <p class="text-secondary text-sm">Create and customize entry forms for different labs and occasions</p>
+        </div>
         <div class="admin-actions">
-            <a href="/admin/forms/builder" class="btn btn-primary">+ New Form</a>
+            <a href="/admin/forms/builder" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+                <span class="material-symbols-outlined">add</span>
+                <span>New Form</span>
+            </a>
         </div>
     </div>
 
     {% if forms %}
     <div class="field-list">
         {% for f in forms %}
-        <div class="field-item">
+        <div class="field-item" id="formRow-{{ f.id }}">
             <div class="field-item-header">
                 <div>
                     <span class="field-item-label">{{ f.name }}</span>
@@ -27,10 +33,22 @@
                 </div>
                 <div class="field-item-actions">
                     {% if not f.active %}
-                    <button class="btn btn-ghost btn-sm" data-activate-form="{{ f.id }}">Set Active</button>
+                    <button type="button" class="btn btn-ghost btn-sm" data-activate-form="{{ f.id }}" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">check_circle</span><span>Set Active</span></button>
+                    <button type="button" class="btn btn-danger btn-sm" data-delete-form="{{ f.id }}" data-form-name="{{ f.name }}" title="Delete this form" style="display: inline-flex; align-items: center; gap: 4px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                        <span>Delete</span>
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-ghost btn-sm" disabled style="opacity: 0.35; cursor: not-allowed; display: inline-flex; align-items: center; gap: 4px;" title="Active form cannot be deleted. Activate another form first.">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                        <span>Delete</span>
+                    </button>
                     {% endif %}
-                    <a href="/admin/forms/builder/{{ f.id }}" class="btn btn-secondary btn-sm">Edit</a>
-                    <a href="/admin/forms/preview/{{ f.id }}" class="btn btn-ghost btn-sm">Preview</a>
+                    <a href="/admin/forms/builder/{{ f.id }}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
+                        <span>Edit</span>
+                    </a>
+                    <a href="/admin/forms/preview/{{ f.id }}" class="btn btn-ghost btn-sm" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">visibility</span><span>Preview</span></a>
                 </div>
             </div>
             <div class="field-item-meta">
@@ -42,7 +60,7 @@
     {% else %}
     <div class="card">
         <div class="empty-state">
-            <div class="icon">🛠️</div>
+            <div class="icon"><span class="material-symbols-outlined" style="font-size: 3rem;">design_services</span></div>
             <p>No forms yet. Create one to get started.</p>
         </div>
     </div>
@@ -51,13 +69,18 @@
     {% elif mode == 'builder' %}
     <!-- ── Form Builder ──────────────────────────────────── -->
     <div class="admin-header">
-        <h1>🛠️ {% if form %}Edit Form{% else %}New Form{% endif %}</h1>
+        <div>
+            <h1><span class="material-symbols-outlined" style="font-size: 1.8rem; vertical-align: middle; margin-right: 6px;">tune</span>{% if form %}Edit Form{% else %}New Form{% endif %}</h1>
+        </div>
         <div class="admin-actions">
             <a href="/admin/forms" class="btn btn-ghost">← Back</a>
             {% if form %}
-            <a href="/admin/forms/preview/{{ form.id }}" class="btn btn-secondary btn-sm" target="_blank">Preview</a>
+            <a href="/admin/forms/preview/{{ form.id }}" class="btn btn-secondary btn-sm" target="_blank" style="display: inline-flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1rem;">visibility</span><span>Preview</span></a>
             {% endif %}
-            <button class="btn btn-primary" id="saveFormBtn" onclick="saveForm()">💾 Save Form</button>
+            <button class="btn btn-primary" id="saveFormBtn" onclick="saveForm()" style="display: inline-flex; align-items: center; gap: 6px;">
+                <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM565-275q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z"/></svg>
+                <span>Save Form</span>
+            </button>
         </div>
     </div>
 
@@ -86,49 +109,49 @@
                 <div class="component-section-title">Layout</div>
                 <div class="component-list">
                     <div class="component-item" onclick="addField('heading')">
-                        <span class="icon">H</span> Heading
+                        <span class="icon"><span class="material-symbols-outlined" style="font-size: 1.1rem;">title</span></span> Heading
                     </div>
                     <div class="component-item" onclick="addField('paragraph')">
-                        <span class="icon">¶</span> Paragraph
+                        <span class="icon"><span class="material-symbols-outlined" style="font-size: 1.1rem;">short_text</span></span> Paragraph
                     </div>
                     <div class="component-item" onclick="addField('divider')">
-                        <span class="icon">—</span> Divider
+                        <span class="icon"><span class="material-symbols-outlined" style="font-size: 1.1rem;">horizontal_rule</span></span> Divider
                     </div>
                 </div>
 
                 <div class="component-section-title">Input</div>
                 <div class="component-list">
                     <div class="component-item" onclick="addField('text')">
-                        <span class="icon">Aa</span> Text
+                        <span class="icon"><span class="material-symbols-outlined" style="font-size: 1.1rem;">text_fields</span></span> Text
                     </div>
                     <div class="component-item" onclick="addField('number')">
-                        <span class="icon">#</span> Number
+                        <span class="icon"><span class="material-symbols-outlined" style="font-size: 1.1rem;">pin</span></span> Number
                     </div>
                     <div class="component-item" onclick="addField('textarea')">
-                        <span class="icon">📝</span> Text Area
+                        <span class="icon"><span class="material-symbols-outlined" style="font-size: 1.1rem;">notes</span></span> Text Area
                     </div>
                 </div>
 
                 <div class="component-section-title">Selection</div>
                 <div class="component-list">
                     <div class="component-item" onclick="addField('dropdown')">
-                        <span class="icon">▼</span> Dropdown
+                        <span class="icon"><span class="material-symbols-outlined" style="font-size: 1.1rem;">arrow_drop_down_circle</span></span> Dropdown
                     </div>
                     <div class="component-item" onclick="addField('radio')">
-                        <span class="icon">◉</span> Radio
+                        <span class="icon"><span class="material-symbols-outlined" style="font-size: 1.1rem;">radio_button_checked</span></span> Radio
                     </div>
                     <div class="component-item" onclick="addField('checkbox')">
-                        <span class="icon">☑</span> Checkbox
+                        <span class="icon"><span class="material-symbols-outlined" style="font-size: 1.1rem;">check_box</span></span> Checkbox
                     </div>
                 </div>
 
                 <div class="component-section-title">Date / Time</div>
                 <div class="component-list">
                     <div class="component-item" onclick="addField('date')">
-                        <span class="icon">📅</span> Date
+                        <span class="icon"><span class="material-symbols-outlined" style="font-size: 1.1rem;">calendar_today</span></span> Date
                     </div>
                     <div class="component-item" onclick="addField('time')">
-                        <span class="icon">⏰</span> Time
+                        <span class="icon"><span class="material-symbols-outlined" style="font-size: 1.1rem;">schedule</span></span> Time
                     </div>
                 </div>
             </div>
@@ -148,10 +171,14 @@
                                 {% endif %}
                             </div>
                             <div class="field-item-actions">
-                                <button class="btn btn-ghost btn-sm" onclick="moveField(this, 'up')" title="Move up">↑</button>
-                                <button class="btn btn-ghost btn-sm" onclick="moveField(this, 'down')" title="Move down">↓</button>
-                                <button class="btn btn-ghost btn-sm" onclick="toggleFieldEditor(this)" title="Edit">✏️</button>
-                                <button class="btn btn-ghost btn-sm text-danger" onclick="deleteField(this)" title="Delete">✕</button>
+                                <button class="btn btn-ghost btn-sm" onclick="moveField(this, 'up')" title="Move up" style="display: inline-flex; align-items: center;"><span class="material-symbols-outlined" style="font-size: 1rem;">arrow_upward</span></button>
+                                <button class="btn btn-ghost btn-sm" onclick="moveField(this, 'down')" title="Move down" style="display: inline-flex; align-items: center;"><span class="material-symbols-outlined" style="font-size: 1rem;">arrow_downward</span></button>
+                                <button class="btn btn-ghost btn-sm" onclick="toggleFieldEditor(this)" title="Edit Field" style="display: inline-flex; align-items: center;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
+                                </button>
+                                <button class="btn btn-ghost btn-sm text-danger" onclick="deleteField(this)" title="Delete Field" style="display: inline-flex; align-items: center;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                                </button>
                             </div>
                         </div>
                         <div class="field-item-label">{{ field.label or field.configuration.get('text', field.field_type | capitalize) }}</div>
@@ -249,7 +276,7 @@
                     {% endfor %}
                 {% else %}
                     <div class="empty-state" id="emptyFields">
-                        <div class="icon">🧩</div>
+                        <div class="icon"><span class="material-symbols-outlined" style="font-size: 3rem;">widgets</span></div>
                         <p>Add fields from the components panel on the left.</p>
                     </div>
                 {% endif %}

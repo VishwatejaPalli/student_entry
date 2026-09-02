@@ -14,24 +14,27 @@
                     <span class="text-muted text-sm">#{{ session.id }}</span>
                 </div>
                 <h1 style="font-size: 1.75rem; margin-bottom: 2px;">{{ session.session_name }}</h1>
-                <p class="text-secondary text-sm">
-                    🏫 {{ session.class_name or 'General' }} &nbsp;•&nbsp; 
-                    📚 {{ session.subject or 'Lab' }} &nbsp;•&nbsp; 
-                    📍 {{ session.room or 'Room' }} &nbsp;•&nbsp; 
-                    👨‍🏫 {{ session.faculty or 'Faculty' }}
+                <p class="text-secondary text-sm" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span style="display: inline-flex; align-items: center; gap: 3px;"><span class="material-symbols-outlined" style="font-size: 1rem;">school</span><span>{{ session.class_name or 'General' }}</span></span> &nbsp;•&nbsp; 
+                    <span style="display: inline-flex; align-items: center; gap: 3px;"><span class="material-symbols-outlined" style="font-size: 1rem;">menu_book</span><span>{{ session.subject or 'Lab' }}</span></span> &nbsp;•&nbsp; 
+                    <span style="display: inline-flex; align-items: center; gap: 3px;"><span class="material-symbols-outlined" style="font-size: 1rem;">meeting_room</span><span>{{ session.room or 'Room' }}</span></span> &nbsp;•&nbsp; 
+                    <span style="display: inline-flex; align-items: center; gap: 3px;"><span class="material-symbols-outlined" style="font-size: 1rem;">badge</span><span>{{ session.faculty or 'Faculty' }}</span></span>
                 </p>
             </div>
 
             <!-- Session Actions -->
             <div class="flex items-center gap-sm flex-wrap">
-                <button type="button" class="btn btn-secondary btn-sm" id="soundToggleBtn" onclick="toggleAudioFeedback()">
-                    🔊 Sound ON
+                <button type="button" class="btn btn-secondary btn-sm" id="soundToggleBtn" onclick="toggleAudioFeedback()" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">volume_up</span>
+                    <span>Sound ON</span>
                 </button>
-                <a href="/api/export/session/{{ session.id }}/excel" class="btn btn-secondary btn-sm" title="Download Excel Attendance Sheet">
-                    📊 Export Excel
+                <a href="/api/export/session/{{ session.id }}/excel" class="btn btn-secondary btn-sm" title="Download Excel Attendance Sheet" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">table_view</span>
+                    <span>Export Excel</span>
                 </a>
-                <button type="button" class="btn btn-danger btn-sm" onclick="confirmEndSession()">
-                    ⏹ End Session
+                <button type="button" class="btn btn-danger btn-sm" onclick="confirmEndSession()" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">stop_circle</span>
+                    <span>End Session</span>
                 </button>
                 <a href="/sessions" class="btn btn-ghost btn-sm">Exit Cockpit</a>
             </div>
@@ -40,15 +43,18 @@
         <!-- Time & Scheduled details -->
         <div class="live-time-strip mt-md pt-sm" style="border-top: 1px solid var(--border-subtle);">
             <div class="flex items-center justify-between flex-wrap gap-sm text-sm">
-                <div>
-                    ⏰ Scheduled: <strong>{{ session.scheduled_start[11:16] }} - {{ session.scheduled_end[11:16] }}</strong>
+                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">schedule</span>
+                    <span>Scheduled: <strong>{{ session.scheduled_start[11:16] }} - {{ session.scheduled_end[11:16] }}</strong></span>
                     <span class="text-muted">({{ session.scheduled_start[:10] }})</span>
                 </div>
-                <div>
-                    🕒 Late Threshold: <strong>{{ session.late_threshold_min }} mins</strong>
+                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">hourglass_bottom</span>
+                    <span>Late Threshold: <strong>{{ session.late_threshold_min }} mins</strong></span>
                 </div>
-                <div>
-                    🖥️ PC Strategy: <strong>{{ session.pc_strategy | capitalize }}</strong>
+                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">computer</span>
+                    <span>PC Strategy: <strong>{{ session.pc_strategy | capitalize }}</strong></span>
                     {% if session.pc_strategy == 'auto_sequential' %} ({{ session.pc_prefix }}##){% endif %}
                 </div>
             </div>
@@ -106,8 +112,9 @@
                        class="form-input scan-input-box"
                        placeholder="Scan barcode or type Roll Number..."
                        autofocus required>
-                <button type="submit" class="btn btn-success scan-btn" id="scanSubmitBtn">
-                    ✓ Check In
+                <button type="submit" class="btn btn-success scan-btn" id="scanSubmitBtn" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined">how_to_reg</span>
+                    <span>Check In</span>
                 </button>
             </div>
         </form>
@@ -115,7 +122,7 @@
         <!-- Live Scan Feedback Flash Banner -->
         <div id="scanFeedback" class="scan-feedback-banner hidden">
             <div class="flex items-center gap-md">
-                <span id="feedbackIcon" style="font-size: 1.5rem;">✓</span>
+                <span id="feedbackIcon" style="font-size: 1.5rem;"><span class="material-symbols-outlined">check_circle</span></span>
                 <div>
                     <div id="feedbackText" style="font-weight: 600; font-size: 1rem;"></div>
                     <div id="feedbackSub" class="text-xs text-muted"></div>
@@ -128,7 +135,7 @@
     <div class="card">
         <div class="card-header flex-wrap gap-md">
             <div>
-                <h3 class="card-title">👥 Class Roster</h3>
+                <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">group</span><span>Class Roster</span></h3>
                 <span class="text-sm text-muted">Click any row to manually change status or edit PC</span>
             </div>
 
@@ -181,10 +188,10 @@
                         </td>
                         <td>
                             <div class="flex gap-xs">
-                                <button type="button" class="btn btn-ghost btn-sm text-success" title="Mark Present" onclick="manualStatus('{{ st.roll_no }}', 'PRESENT')">✓</button>
-                                <button type="button" class="btn btn-ghost btn-sm text-warning" title="Mark Late" onclick="manualStatus('{{ st.roll_no }}', 'LATE')">⏰</button>
-                                <button type="button" class="btn btn-ghost btn-sm text-danger" title="Mark Absent" onclick="manualStatus('{{ st.roll_no }}', 'ABSENT')">✕</button>
-                                <button type="button" class="btn btn-ghost btn-sm" title="Edit PC" onclick="editPcPrompt('{{ st.roll_no }}', '{{ st.pc_assigned }}')">💻</button>
+                                <button type="button" class="btn btn-ghost btn-sm text-success" title="Mark Present" onclick="manualStatus('{{ st.roll_no }}', 'PRESENT')"><span class="material-symbols-outlined" style="font-size: 1rem;">check</span></button>
+                                <button type="button" class="btn btn-ghost btn-sm text-warning" title="Mark Late" onclick="manualStatus('{{ st.roll_no }}', 'LATE')"><span class="material-symbols-outlined" style="font-size: 1rem;">schedule</span></button>
+                                <button type="button" class="btn btn-ghost btn-sm text-danger" title="Mark Absent" onclick="manualStatus('{{ st.roll_no }}', 'ABSENT')"><span class="material-symbols-outlined" style="font-size: 1rem;">close</span></button>
+                                <button type="button" class="btn btn-ghost btn-sm" title="Edit PC" onclick="editPcPrompt('{{ st.roll_no }}', '{{ st.pc_assigned }}')"><span class="material-symbols-outlined" style="font-size: 1rem;">computer</span></button>
                             </div>
                         </td>
                     </tr>
@@ -194,7 +201,7 @@
                     <tr id="emptyRosterRow">
                         <td colspan="7">
                             <div class="empty-state">
-                                <div class="icon">👥</div>
+                                <div class="icon"><span class="material-symbols-outlined" style="font-size: 3rem;">group</span></div>
                                 <p>No students enrolled in this session yet. Scan any card to add as walk-in!</p>
                             </div>
                         </td>

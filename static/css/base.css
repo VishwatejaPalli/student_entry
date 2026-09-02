@@ -1,0 +1,96 @@
+/* ═══════════════════════════════════════════════════════════════
+   Base Typography & Global Element Styling
+   ═══════════════════════════════════════════════════════════════ */
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient-bg);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── Typography ──────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-primary);
+}
+
+h1 { font-size: 2rem; letter-spacing: -0.02em; }
+h2 { font-size: 1.5rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.1rem; }
+
+p { color: var(--text-secondary); }
+
+a {
+    color: var(--accent-primary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+a:hover { color: var(--accent-primary-hover); }
+
+/* ── Accessibility ────────────────────────────────────────────── */
+.btn:focus-visible,
+.navbar-links a:focus-visible,
+.theme-seg-btn:focus-visible,
+.session-tab-btn:focus-visible,
+.sub-tab-btn:focus-visible,
+.mode-switch-btn:focus-visible,
+.form-input:focus-visible,
+.form-select:focus-visible,
+.form-textarea:focus-visible {
+    outline: 2px solid var(--accent-info);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ── Material Symbols Solid Icons Styling ──────────────────────── */
+.material-symbols-outlined,
+.material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-size: 1.15rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    user-select: none;
+}
+
+.btn .material-symbols-outlined,
+.btn .material-symbols-rounded {
+    font-size: 1.1rem;
+}
+
+.btn-lg .material-symbols-outlined,
+.btn-lg .material-symbols-rounded {
+    font-size: 1.35rem;
+}
+
+.btn-sm .material-symbols-outlined,
+.btn-sm .material-symbols-rounded {
+    font-size: 1rem;
+}

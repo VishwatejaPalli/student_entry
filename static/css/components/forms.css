@@ -1,0 +1,184 @@
+/* ═══════════════════════════════════════════════════════════════
+   Form Controls & Input Components
+   ═══════════════════════════════════════════════════════════════ */
+
+.form-group {
+    margin-bottom: var(--space-lg);
+}
+
+.form-group label,
+.group-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-sm);
+}
+
+.required-star {
+    color: var(--accent-danger);
+    margin-left: 2px;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: all var(--transition-fast);
+    outline: none;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="light"] .form-input,
+html[data-theme="light"] .form-select,
+html[data-theme="light"] .form-textarea {
+    background: var(--bg-input);
+    border: 1px solid #cbd5e1;
+    color: var(--text-primary);
+}
+
+html[data-theme="light"] .form-input:focus,
+html[data-theme="light"] .form-select:focus,
+html[data-theme="light"] .form-textarea:focus {
+    background: var(--bg-input);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(85, 72, 235, 0.15);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--text-muted);
+}
+
+.form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239a9ab0' d='M6 8.825L0.375 3.2l.85-.85L6 7.125l4.775-4.775.85.85z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 2.5rem;
+}
+
+.form-select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+html[data-theme="light"] .form-select option {
+    background: #ffffff;
+    color: var(--text-primary);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-input--large {
+    padding: 1rem 1.25rem;
+    font-size: 1.15rem;
+    text-align: center;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+/* Radio & Checkbox */
+.radio-group,
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.radio-group--inline {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+}
+
+.radio-label,
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.radio-label:hover,
+.checkbox-label:hover {
+    background: var(--bg-glass);
+}
+
+.radio-label input[type="radio"],
+.checkbox-label input[type="checkbox"] {
+    accent-color: var(--accent-primary);
+    width: 18px;
+    height: 18px;
+}
+
+.form-group--checkbox {
+    margin-bottom: var(--space-md);
+}
+
+/* ── Form Sectioning ─────────────────────────────────────────── */
+.form-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: var(--space-sm);
+    margin-bottom: var(--space-md);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.form-heading {
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+    padding-top: var(--space-md);
+}
+
+.form-paragraph {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: var(--space-lg);
+    padding: var(--space-md);
+    border-radius: var(--radius-sm);
+    background: var(--bg-glass);
+    border-left: 3px solid var(--accent-info);
+}
+
+.form-paragraph--warning {
+    border-left-color: var(--accent-warning);
+    background: rgba(255, 171, 64, 0.05);
+}
+
+.form-paragraph--info {
+    border-left-color: var(--accent-info);
+}
+
+.form-divider {
+    border: none;
+    height: 1px;
+    background: var(--border-light);
+    margin: var(--space-xl) 0;
+}

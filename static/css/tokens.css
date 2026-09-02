@@ -1,0 +1,144 @@
+/* ═══════════════════════════════════════════════════════════════
+   Design Tokens & Theme Variables
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ── Theme-invariant tokens ─────────────────────────────────── */
+:root {
+    /* Spacing */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+
+    /* Border radius */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-full: 9999px;
+
+    /* Transitions */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Dark Mode (default) ────────────────────────────────────── */
+:root,
+html,
+body,
+[data-theme="dark"],
+html[data-theme="dark"],
+body[data-theme="dark"] {
+    /* Core palette */
+    --bg-primary: #0a0a1a;
+    --bg-secondary: #111128;
+    --bg-tertiary: #1a1a3e;
+    --bg-card: rgba(20, 20, 50, 0.7);
+    --bg-card-hover: rgba(30, 30, 65, 0.8);
+    --bg-glass: rgba(255, 255, 255, 0.03);
+    --bg-input: rgba(255, 255, 255, 0.06);
+    --bg-navbar: rgba(10, 10, 26, 0.88);
+    --bg-overlay: rgba(10, 10, 26, 0.7);
+    --bg-cockpit: linear-gradient(135deg, rgba(17, 17, 40, 0.95) 0%, rgba(20, 35, 60, 0.95) 100%);
+    --bg-scan-card: rgba(15, 15, 35, 0.9);
+    --bg-scan-input: rgba(0, 0, 0, 0.4);
+    --text-scan-input: #ffffff;
+
+    /* Accent colors */
+    --accent-primary: #6c63ff;
+    --accent-primary-hover: #7b73ff;
+    --accent-secondary: #00d2ff;
+    --accent-success: #00e676;
+    --accent-warning: #ffab40;
+    --accent-danger: #ff5252;
+    --accent-info: #40c4ff;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, #6c63ff 0%, #00d2ff 100%);
+    --gradient-success: linear-gradient(135deg, #00e676 0%, #00bfa5 100%);
+    --gradient-danger: linear-gradient(135deg, #ff5252 0%, #ff1744 100%);
+    --gradient-card: linear-gradient(135deg, rgba(108,99,255,0.1) 0%, rgba(0,210,255,0.05) 100%);
+    --gradient-bg: radial-gradient(ellipse at 20% 50%, rgba(108,99,255,0.15) 0%, transparent 50%),
+                   radial-gradient(ellipse at 80% 20%, rgba(0,210,255,0.1) 0%, transparent 50%),
+                   radial-gradient(ellipse at 50% 80%, rgba(108,99,255,0.08) 0%, transparent 50%);
+
+    /* Text */
+    --text-primary: #e8e8f0;
+    --text-secondary: #9a9ab0;
+    --text-muted: #6a6a80;
+    --text-accent: #6c63ff;
+
+    /* Borders */
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-light: rgba(255, 255, 255, 0.1);
+    --border-accent: rgba(108, 99, 255, 0.3);
+
+    /* Shadows */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 30px rgba(108, 99, 255, 0.2);
+    --shadow-glow-success: 0 0 30px rgba(0, 230, 118, 0.2);
+}
+
+/* ── Light Mode ─────────────────────────────────────────────── */
+:root[data-theme="light"],
+html[data-theme="light"],
+body[data-theme="light"],
+[data-theme="light"] {
+    /* Core palette */
+    --bg-primary: #f4f6fb;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #e9eff8;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f8fafc;
+    --bg-glass: rgba(255, 255, 255, 0.85);
+    --bg-input: #ffffff;
+    --bg-navbar: rgba(255, 255, 255, 0.95);
+    --bg-overlay: rgba(255, 255, 255, 0.7);
+    --bg-cockpit: linear-gradient(135deg, #f8fafc 0%, #eef2f8 100%);
+    --bg-scan-card: #ffffff;
+    --bg-scan-input: #f8fafc;
+    --text-scan-input: #1e293b;
+
+    /* Accent colors */
+    --accent-primary: #5548eb;
+    --accent-primary-hover: #4336d8;
+    --accent-secondary: #0088cc;
+    --accent-success: #059669;
+    --accent-warning: #d97706;
+    --accent-danger: #dc2626;
+    --accent-info: #0284c7;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, #5548eb 0%, #0088cc 100%);
+    --gradient-success: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+    --gradient-danger: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    --gradient-card: linear-gradient(135deg, rgba(85,72,235,0.05) 0%, rgba(0,136,204,0.03) 100%);
+    --gradient-bg: radial-gradient(ellipse at 20% 50%, rgba(85,72,235,0.07) 0%, transparent 50%),
+                   radial-gradient(ellipse at 80% 20%, rgba(0,136,204,0.05) 0%, transparent 50%),
+                   radial-gradient(ellipse at 50% 80%, rgba(85,72,235,0.03) 0%, transparent 50%);
+
+    /* Text */
+    --text-primary: #192038;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-accent: #5548eb;
+
+    /* Borders */
+    --border-subtle: rgba(0, 0, 0, 0.08);
+    --border-light: rgba(0, 0, 0, 0.14);
+    --border-accent: rgba(85, 72, 235, 0.35);
+
+    /* Shadows */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 18px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+    --shadow-glow: 0 0 25px rgba(85, 72, 235, 0.14);
+    --shadow-glow-success: 0 0 25px rgba(5, 150, 105, 0.15);
+}

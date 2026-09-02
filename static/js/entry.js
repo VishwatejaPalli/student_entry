@@ -1,12 +1,14 @@
 /**
- * Entry.js — Student entry/exit page logic
+ * Entry.js — Fast Kiosk entry/exit logic with auto-reset
  *
- * Two-step flow:
+ * Flow:
  *   1. Enter/scan roll number → identify student
- *   2. If inside → exit; if outside → show form → submit entry
+ *   2. If inside → Exit instantly with duration summary
+ *   3. If outside & no required fields → Check IN instantly with welcome card
+ *   4. If outside & required fields → Open dynamic form
  */
 
-let exitTimer = null;
+let resetTimer = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     const identifyForm = document.getElementById('identifyForm');
@@ -16,27 +18,34 @@ document.addEventListener('DOMContentLoaded', () => {
     if (identifyForm) {
         identifyForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const rollNo = document.getElementById('rollNoInput').value.trim();
+            const rollNo = document.getElementById('rollNoInput').value.trim().toUpperCase();
             if (!rollNo) return;
 
             const btn = document.getElementById('continueBtn');
-            btn.disabled = true;
-            btn.textContent = 'Processing...';
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Processing...';
+            }
 
             try {
                 const result = await apiCall('/api/identify', 'POST', { roll_no: rollNo });
 
                 if (result.is_inside) {
-                    // Student is inside → Record Exit directly and show Exit Message Screen
+                    // Student is inside → Record Exit directly
                     const exitRes = await apiCall('/api/exit', 'POST', { roll_no: rollNo });
                     showExitScreen(exitRes);
+                } else if (result.entry_recorded) {
+                    // Student is outside & entry was recorded automatically
+                    showEntryScreen(result);
                 } else {
-                    // Student is outside → open dynamic entry form
+                    // Form has required fields → navigate to form
                     window.location.href = `/entry/form/${encodeURIComponent(rollNo)}`;
                 }
             } catch (err) {
-                btn.disabled = false;
-                btn.textContent = 'Continue →';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<span class="material-symbols-outlined">flash_on</span><span>Check In / Out →</span>`;
+                }
             }
         });
 
@@ -44,13 +53,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('rollNoInput')?.focus();
     }
 
-    // Step 2: Submit entry
+    // Step 2: Dynamic Entry Form Submit
     if (entryForm) {
         entryForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitEntryBtn');
-            btn.disabled = true;
-            btn.textContent = 'Submitting...';
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Submitting...';
+            }
 
             const formData = new FormData(entryForm);
             const rollNo = formData.get('roll_no');
@@ -78,17 +89,75 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 showToast(result.message, 'success');
 
-                // Reset and go back to step 1 after delay
                 setTimeout(() => {
                     window.location.href = '/';
-                }, 1500);
+                }, 1200);
             } catch (err) {
-                btn.disabled = false;
-                btn.textContent = '✓ Record Entry';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<span class="material-symbols-outlined">how_to_reg</span><span>Record Entry</span>`;
+                }
             }
         });
     }
 });
+
+
+// ── Entry Confirmation Screen ────────────────────────────────────
+
+function showEntryScreen(data) {
+    const stepIdentify = document.getElementById('stepIdentify');
+    const stepEntryMessage = document.getElementById('stepEntryMessage');
+
+    if (!stepEntryMessage) return;
+
+    if (stepIdentify) stepIdentify.classList.add('hidden');
+    stepEntryMessage.classList.remove('hidden');
+
+    const nameEl = document.getElementById('entryStudentName');
+    const rollEl = document.getElementById('entryRollNo');
+    const deptSecEl = document.getElementById('entryDeptSec');
+    const batchEl = document.getElementById('entryBatch');
+    const timeEl = document.getElementById('entryTimeVal');
+    const countdownEl = document.getElementById('entryCountdown');
+
+    const sName = data.student_name || data.roll_no;
+    if (nameEl) nameEl.textContent = sName;
+    if (rollEl) rollEl.textContent = data.roll_no;
+
+    let deptStr = data.department || '—';
+    if (data.section) deptStr += ` (Section ${data.section})`;
+    if (deptSecEl) deptSecEl.textContent = deptStr;
+
+    if (batchEl) {
+        batchEl.innerHTML = data.batch
+            ? `<span class="badge badge--batch">${data.batch}</span>`
+            : `<span class="text-muted text-xs">—</span>`;
+    }
+
+    if (timeEl) {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        timeEl.textContent = `${hh}:${mm}`;
+    }
+
+    showToast(`Check-in recorded for ${sName}`, 'success');
+
+    // 3-second countdown before auto-resetting
+    let secondsLeft = 3;
+    if (countdownEl) countdownEl.textContent = secondsLeft;
+
+    if (resetTimer) clearInterval(resetTimer);
+    resetTimer = setInterval(() => {
+        secondsLeft--;
+        if (countdownEl) countdownEl.textContent = secondsLeft;
+        if (secondsLeft <= 0) {
+            clearInterval(resetTimer);
+            resetToScanInput();
+        }
+    }, 1000);
+}
 
 
 // ── Exit Screen Management ───────────────────────────────────────
@@ -121,29 +190,31 @@ function showExitScreen(data) {
 
     showToast(`Exit recorded for ${data.student_name || data.roll_no}`, 'success');
 
-    // 4-second countdown before auto-resetting
-    let secondsLeft = 4;
+    // 3-second countdown before auto-resetting
+    let secondsLeft = 3;
     if (countdownEl) countdownEl.textContent = secondsLeft;
 
-    if (exitTimer) clearInterval(exitTimer);
-    exitTimer = setInterval(() => {
+    if (resetTimer) clearInterval(resetTimer);
+    resetTimer = setInterval(() => {
         secondsLeft--;
         if (countdownEl) countdownEl.textContent = secondsLeft;
         if (secondsLeft <= 0) {
-            clearInterval(exitTimer);
+            clearInterval(resetTimer);
             resetToScanInput();
         }
     }, 1000);
 }
 
 function resetToScanInput() {
-    if (exitTimer) clearInterval(exitTimer);
+    if (resetTimer) clearInterval(resetTimer);
 
     const stepIdentify = document.getElementById('stepIdentify');
+    const stepEntryMessage = document.getElementById('stepEntryMessage');
     const stepExitMessage = document.getElementById('stepExitMessage');
     const rollInput = document.getElementById('rollNoInput');
     const continueBtn = document.getElementById('continueBtn');
 
+    if (stepEntryMessage) stepEntryMessage.classList.add('hidden');
     if (stepExitMessage) stepExitMessage.classList.add('hidden');
     if (stepIdentify) stepIdentify.classList.remove('hidden');
 
@@ -153,7 +224,6 @@ function resetToScanInput() {
     }
     if (continueBtn) {
         continueBtn.disabled = false;
-        continueBtn.textContent = 'Continue →';
+        continueBtn.innerHTML = `<span class="material-symbols-outlined">flash_on</span><span>Check In / Out →</span>`;
     }
 }
-

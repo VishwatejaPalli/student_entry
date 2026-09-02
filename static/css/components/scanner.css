@@ -1,0 +1,149 @@
+/* ═══════════════════════════════════════════════════════════════
+   Barcode / Scanner & Cockpit Components
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Pulse Indicators ────────────────────────────────────────── */
+.pulse-indicator {
+    width: 10px;
+    height: 10px;
+    background: var(--accent-success);
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7);
+    animation: pulse 1.6s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(0, 230, 118, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); }
+}
+
+.scan-beacon {
+    width: 12px;
+    height: 12px;
+    background: var(--accent-info);
+    border-radius: 50%;
+    display: inline-block;
+    animation: scanBeacon 1.2s infinite ease-in-out;
+}
+
+@keyframes scanBeacon {
+    0%, 100% { opacity: 0.4; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 12px var(--accent-info); }
+}
+
+/* ── Live Cockpit & Scanner ──────────────────────────────────── */
+.live-cockpit-banner {
+    background: var(--bg-cockpit);
+    border: 1px solid var(--border-accent);
+}
+
+.meter-bar-track {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-input);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.meter-bar-fill {
+    height: 100%;
+    background: var(--gradient-success);
+    border-radius: var(--radius-full);
+    transition: width 0.4s ease;
+}
+
+.scan-cockpit-card {
+    background: var(--bg-scan-card);
+    border: 2px solid var(--border-accent);
+    padding: var(--space-xl);
+    position: relative;
+    box-shadow: var(--shadow-glow);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+html[data-theme="light"] .scan-cockpit-card {
+    background: var(--bg-scan-card);
+    border-color: var(--accent-primary);
+    box-shadow: 0 10px 35px rgba(85, 72, 235, 0.1);
+}
+
+.scan-cockpit-card.flash-success {
+    border-color: var(--accent-success) !important;
+    box-shadow: 0 0 40px rgba(0, 230, 118, 0.35) !important;
+}
+
+.scan-cockpit-card.flash-late {
+    border-color: var(--accent-warning) !important;
+    box-shadow: 0 0 40px rgba(255, 171, 64, 0.35) !important;
+}
+
+.scan-cockpit-card.flash-warning {
+    border-color: var(--accent-danger) !important;
+    box-shadow: 0 0 40px rgba(255, 82, 82, 0.35) !important;
+}
+
+.scan-input-wrapper {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.scan-input-box {
+    font-size: 1.25rem;
+    padding: 0.9rem 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    background: var(--bg-scan-input);
+    border-color: var(--border-light);
+    color: var(--text-scan-input);
+}
+
+.scan-input-box:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.25);
+}
+
+html[data-theme="light"] .scan-input-box {
+    background: var(--bg-scan-input);
+    border-color: #cbd5e1;
+    color: var(--text-scan-input);
+}
+
+.scan-btn {
+    padding: 0 1.75rem;
+    font-size: 1.05rem;
+    white-space: nowrap;
+}
+
+.scan-feedback-banner {
+    margin-top: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-md);
+    background: rgba(0, 230, 118, 0.1);
+    border: 1px solid var(--accent-success);
+    color: var(--text-primary);
+    animation: fadeIn 0.2s ease-out;
+}
+
+html[data-theme="light"] .scan-feedback-banner {
+    border: 1px solid var(--border-subtle);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.pc-badge {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(108, 99, 255, 0.12);
+    border: 1px solid rgba(108, 99, 255, 0.3);
+    color: var(--accent-primary-hover);
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
+}

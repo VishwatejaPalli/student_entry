@@ -1,56 +1,214 @@
 {% extends "base.html" %}
 
-{% block title %}Export — Room Entry System{% endblock %}
+{% block title %}Export & Reports — Room Entry System{% endblock %}
 
 {% block content %}
-<div class="container container--narrow">
+<div class="container container--wide">
     <div class="admin-header">
-        <h1>📥 Export Records</h1>
+        <div>
+            <h1><span class="material-symbols-outlined" style="font-size: 1.8rem; vertical-align: middle; margin-right: 6px;">download</span>Reports & Data Export Center</h1>
+            <p class="text-secondary text-sm">Download formatted Excel spreadsheets and CSV files for records, sessions, and students</p>
+        </div>
     </div>
 
-    <div class="card">
-        <div class="card-header" style="border-bottom: none;">
-            <h3 class="card-title">Export Options</h3>
-        </div>
-
-        <div class="form-group">
-            <label for="exportForm">Form</label>
-            <select id="exportForm" class="form-select">
-                <option value="">Active Form</option>
-                {% for f in forms %}
-                <option value="{{ f.id }}">{{ f.name }}{% if f.active %} (Active){% endif %}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
-            <div class="form-group">
-                <label for="exportFrom">From Date</label>
-                <input type="date" id="exportFrom" class="form-input">
+    <div class="settings-grid mb-xl" style="grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));">
+        <!-- 1. Individual Entry & Exit Logs -->
+        <div class="card">
+            <div class="card-header" style="border-bottom: none; margin-bottom: var(--space-xs); padding-bottom: 0;">
+                <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">history</span><span>Entry & Exit Activity Logs</span></h3>
             </div>
+            <p class="text-muted text-sm mb-lg">Export individual check-in logs with custom form fields, duration, and timestamps.</p>
+
             <div class="form-group">
-                <label for="exportTo">To Date</label>
-                <input type="date" id="exportTo" class="form-input">
+                <label for="exportForm">Form / Category</label>
+                <select id="exportForm" class="form-select">
+                    <option value="">All Form Entries (Active)</option>
+                    {% for f in forms %}
+                    <option value="{{ f.id }}">{{ f.name }}{% if f.active %} (Active){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+                <div class="form-group">
+                    <label for="exportFrom">From Date</label>
+                    <input type="date" id="exportFrom" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="exportTo">To Date</label>
+                    <input type="date" id="exportTo" class="form-input">
+                </div>
+            </div>
+
+            <div class="flex gap-sm mt-lg">
+                <button class="btn btn-primary" onclick="downloadExport('excel')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem;">table_view</span>
+                    <span>Excel Sheet</span>
+                </button>
+                <button class="btn btn-secondary" onclick="downloadExport('csv')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem;">description</span>
+                    <span>CSV</span>
+                </button>
             </div>
         </div>
 
-        <div class="flex gap-md mt-lg">
-            <button class="btn btn-primary btn-lg" onclick="downloadExport('excel')" style="flex: 1;">
-                📊 Download Excel
-            </button>
-            <button class="btn btn-secondary btn-lg" onclick="downloadExport('csv')" style="flex: 1;">
-                📄 Download CSV
-            </button>
+        <!-- 2. Master Student Directory -->
+        <div class="card">
+            <div class="card-header" style="border-bottom: none; margin-bottom: var(--space-xs); padding-bottom: 0;">
+                <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">group</span><span>Student Master Directory</span></h3>
+            </div>
+            <p class="text-muted text-sm mb-lg">Download master roster of all registered students with departments, sections, batches, and years.</p>
+
+            <div class="card card--glass mb-lg" style="padding: var(--space-md); text-align: left;">
+                <div class="text-sm text-secondary">
+                    <div style="display: flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined text-success" style="font-size: 1rem;">check</span><span>Formatted headers and columns</span></div>
+                    <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px;"><span class="material-symbols-outlined text-success" style="font-size: 1rem;">check</span><span>Includes Roll No, Name, Dept, Section, Batch, Year</span></div>
+                    <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px;"><span class="material-symbols-outlined text-success" style="font-size: 1rem;">check</span><span>Compatible with Excel, Google Sheets & College ERPs</span></div>
+                </div>
+            </div>
+
+            <div class="flex gap-sm mt-auto">
+                <a href="/api/export/students/excel" class="btn btn-primary" style="flex: 1; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem;">table_view</span>
+                    <span>Download (Excel)</span>
+                </a>
+                <a href="/api/export/students/csv" class="btn btn-secondary" style="flex: 1; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem;">description</span>
+                    <span>CSV</span>
+                </a>
+            </div>
         </div>
 
-        <p class="text-muted text-sm mt-md text-center">
-            Exports include all system fields and custom form fields.
-        </p>
+        <!-- 3. Class Sessions & Lab Attendance -->
+        <div class="card">
+            <div class="card-header" style="border-bottom: none; margin-bottom: var(--space-xs); padding-bottom: 0;">
+                <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">school</span><span>Class Session Attendance</span></h3>
+            </div>
+            <p class="text-muted text-sm mb-lg">Download colored lab attendance sheets with PC allocations and timestamps per class session.</p>
+
+            <div class="card card--glass mb-lg" style="padding: var(--space-md); text-align: left;">
+                <div class="text-sm text-secondary">
+                    <div style="display: flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined text-success" style="font-size: 1rem;">check</span><span>Color-coded status (Present, Late, Absent)</span></div>
+                    <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px;"><span class="material-symbols-outlined text-success" style="font-size: 1rem;">check</span><span>PC assignment tracking</span></div>
+                    <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px;"><span class="material-symbols-outlined text-success" style="font-size: 1rem;">check</span><span>Subject, Faculty, Room, & Date metadata</span></div>
+                </div>
+            </div>
+
+            <div class="flex gap-sm mt-auto">
+                <a href="/sessions" class="btn btn-secondary" style="flex: 1; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem;">history</span>
+                    <span>Go to Sessions History →</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- 4. Year Transition & Data Reset Center -->
+        <div class="card" style="border: 1px solid rgba(255, 82, 82, 0.3);">
+            <div class="card-header" style="border-bottom: none; margin-bottom: var(--space-xs); padding-bottom: 0;">
+                <h3 class="card-title" style="display: inline-flex; align-items: center; gap: 6px; color: var(--accent-danger);"><span class="material-symbols-outlined">delete_sweep</span><span>Year-End Reset & Purge</span></h3>
+            </div>
+            <p class="text-muted text-sm mb-lg">Export your master Excel copies and clear old batches or records in one go protected by password.</p>
+
+            <div class="card card--glass mb-lg" style="padding: var(--space-md); text-align: left;">
+                <div class="text-sm text-secondary">
+                    <div style="display: flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined text-warning" style="font-size: 1rem;">lock</span><span>Protected by Admin Password</span></div>
+                    <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px;"><span class="material-symbols-outlined text-success" style="font-size: 1rem;">check</span><span>Clear students, logs, or full system</span></div>
+                    <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px;"><span class="material-symbols-outlined text-success" style="font-size: 1rem;">check</span><span>Allows clean intake for next academic year</span></div>
+                </div>
+            </div>
+
+            <div class="flex gap-sm mt-auto">
+                <button type="button" class="btn btn-danger" onclick="openClearDataModal()" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                    <span class="material-symbols-outlined">delete_forever</span>
+                    <span>Clear / Reset Data</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clear & Reset Data Modal -->
+<div class="modal-overlay" id="clearDataModal">
+    <div class="modal" style="max-width: 580px;">
+        <div class="modal-header">
+            <h3 style="display: inline-flex; align-items: center; gap: 6px; color: var(--accent-danger);">
+                <span class="material-symbols-outlined">delete_sweep</span>
+                <span>Clear / Reset Data (Year Change)</span>
+            </h3>
+            <button class="btn btn-ghost" onclick="closeModal('clearDataModal')"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div>
+            <!-- Quick Excel Export Step before Clear -->
+            <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-md); margin-bottom: var(--space-md);">
+                <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--accent-primary);">download</span>
+                    <span>Step 1: Download Master Excel Files (Recommended)</span>
+                </div>
+                <p class="text-muted text-xs mb-sm">Export complete copies of your master student directory and entry logs before clearing.</p>
+                <div class="flex gap-sm" style="flex-wrap: wrap;">
+                    <a href="/api/export/students/excel" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">table_view</span>
+                        <span>Master Student Excel</span>
+                    </a>
+                    <a href="/api/export/excel" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">receipt_long</span>
+                        <span>Master Entry Logs Excel</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Clear Scope Selection -->
+            <div class="form-group mb-md">
+                <label style="font-weight: 600; font-size: 0.9rem; margin-bottom: var(--space-xs); display: block;">Step 2: Select What to Clear in One Go</label>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+                        <input type="radio" name="clearTarget" value="students" checked style="margin-top: 3px;">
+                        <div>
+                            <strong style="font-size: 0.9rem;">Clear Master Student Directory & Records</strong>
+                            <p class="text-muted text-xs" style="margin: 2px 0 0 0;">Wipes all registered student profiles so you can import the new academic year batch.</p>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+                        <input type="radio" name="clearTarget" value="logs" style="margin-top: 3px;">
+                        <div>
+                            <strong style="font-size: 0.9rem;">Clear Activity Logs & Class Sessions Only</strong>
+                            <p class="text-muted text-xs" style="margin: 2px 0 0 0;">Clears all past attendance and session history, keeping registered students intact.</p>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+                        <input type="radio" name="clearTarget" value="all" style="margin-top: 3px;">
+                        <div>
+                            <strong style="font-size: 0.9rem; color: var(--accent-danger);">Complete Fresh Reset (Wipe Everything)</strong>
+                            <p class="text-muted text-xs" style="margin: 2px 0 0 0;">Clears all students, past attendance records, and class sessions for a clean slate.</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Password Protection -->
+            <div class="form-group mb-lg">
+                <label for="clearAdminPassword" style="font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--accent-warning);">lock</span>
+                    <span>Step 3: Enter Admin Password to Authorize</span>
+                </label>
+                <input type="password" id="clearAdminPassword" class="form-input" placeholder="Admin password (default: admin)" autocomplete="current-password">
+                <p class="text-muted text-xs mt-xs">Required to prevent unauthorized data removal.</p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('clearDataModal')">Cancel</button>
+                <button type="button" class="btn btn-danger" id="clearDataSubmitBtn" onclick="submitClearData()" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined">delete_forever</span>
+                    <span>Clear Selected Data in One Go</span>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/js/admin.js?v=6"></script>
 <script>
 function downloadExport(format) {
     const formId = document.getElementById('exportForm').value;

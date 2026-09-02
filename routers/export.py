@@ -95,3 +95,41 @@ async def api_export_session_excel(session_id: int):
         return JSONResponse({"error": str(e)}, status_code=400)
     finally:
         await db.close()
+
+
+@router.get("/api/export/students/excel")
+async def api_export_students_excel():
+    """Download student master directory as Excel."""
+    from services.export_service import export_students_excel
+    db = await get_db()
+    try:
+        data = await export_students_excel(db)
+        filename = f"students_directory_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        return Response(
+            content=data,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        await db.close()
+
+
+@router.get("/api/export/students/csv")
+async def api_export_students_csv():
+    """Download student master directory as CSV."""
+    from services.export_service import export_students_csv
+    db = await get_db()
+    try:
+        data = await export_students_csv(db)
+        filename = f"students_directory_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(
+            content=data.encode("utf-8"),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        await db.close()
