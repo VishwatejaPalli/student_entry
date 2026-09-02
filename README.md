@@ -89,58 +89,18 @@ Easily clear or reset the database for a new academic year or semester in one cl
 
 ---
 
-## 🔒 Admin Password for Data Reset: How & Where to Change It
+## 🔒 Admin Password (1-Place Configuration)
 
-The Data Clear / System Reset feature is protected by an **Admin Password** to prevent accidental or unauthorized data wipes.
+The password for the **Year-End Data Reset & Purge Center** is configured in **one single place**: the `.env` file in your project folder.
 
-* **Default Password**: `admin`
+### How to Change the Password:
+Open `.env` and change the `ADMIN_PASSWORD` value:
 
-### How to Change the Admin Password:
-
-You can change the admin password using any of the following 3 methods:
-
-#### Method 1: Environment Variable (Recommended for Local / Server)
-Set the `ADMIN_PASSWORD` environment variable before starting the application:
-
-```bash
-export ADMIN_PASSWORD="your_new_secure_password"
-```
-
-Or create a `.env` file in the project root:
 ```ini
-ADMIN_PASSWORD=your_new_secure_password
+ADMIN_PASSWORD=your_new_password
 ```
 
-#### Method 2: In the Systemd Service File (For Raspberry Pi / Production Linux)
-If running as a background system service installed with `install.sh`:
-
-1. Edit the service file:
-   ```bash
-   sudo nano /etc/systemd/system/student-entry.service
-   ```
-2. Add or update `Environment="ADMIN_PASSWORD=your_new_secure_password"` under the `[Service]` section:
-   ```ini
-   [Service]
-   Type=simple
-   User=vishwa
-   WorkingDirectory=/home/vishwa/code/student_entry
-   Environment="ADMIN_PASSWORD=your_new_secure_password"
-   ExecStart=/home/vishwa/code/student_entry/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
-   Restart=always
-   ```
-3. Reload systemd and restart the service:
-   ```bash
-   sudo systemctl daemon-reload
-   sudo systemctl restart student-entry
-   ```
-
-#### Method 3: In Python Code (`routers/students.py`)
-You can change the fallback default in [routers/students.py](file:///home/vishwa/code/student_entry/routers/students.py):
-
-```python
-# In routers/students.py (around line 380)
-admin_password = os.environ.get("ADMIN_PASSWORD", "your_custom_password_here")
-```
+*(Default password: `admin`)*
 
 ---
 

@@ -70,8 +70,11 @@ else
     fi
 fi
 
-# Ensure data directory exists
+# Ensure data directory and .env exist
 mkdir -p "$INSTALL_DIR/data"
+if [ ! -f "$INSTALL_DIR/.env" ] && [ -f "$INSTALL_DIR/.env.example" ]; then
+    cp "$INSTALL_DIR/.env.example" "$INSTALL_DIR/.env"
+fi
 
 echo -e "${BLUE}[3/6]${NC} ${BOLD}Setting up Python virtual environment...${NC}"
 if [ ! -d "$INSTALL_DIR/venv" ]; then
