@@ -375,7 +375,12 @@ async def api_clear_data(request: Request):
     password = str(body.get("password", "")).strip()
     target = str(body.get("target", "all")).strip()
 
-    admin_password = os.environ.get("ADMIN_PASSWORD", "admin")
+    # Dynamically read ADMIN_PASSWORD from .env so any changes take effect immediately
+    from dotenv import dotenv_values
+    from pathlib import Path
+    env_cfg = dotenv_values(Path(__file__).resolve().parent.parent / ".env")
+    admin_password = env_cfg.get("ADMIN_PASSWORD") or os.environ.get("ADMIN_PASSWORD", "admin")
+
     if password != admin_password:
         return JSONResponse({"error": "Incorrect admin password. Action aborted."}, status_code=401)
 
