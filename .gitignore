@@ -29,6 +29,10 @@ Thumbs.db
 *.swp
 *.swo
 
+# Environment & secrets
+.env
+!.env.example
+
 # Temporary test exports
 /tmp/test_*
 test_export.xlsx
