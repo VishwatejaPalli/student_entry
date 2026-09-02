@@ -36,6 +36,14 @@ The installer automatically:
 
 ---
 
+## 🪟 Windows Quick Start (1-Click)
+
+1. Clone or download the repository to your Windows PC.
+2. Double-click **`start.bat`** (or run `start.bat` in CMD/PowerShell).
+3. The script will automatically configure the Python virtual environment, install packages, and start the local server at **`http://localhost:8000`**.
+
+---
+
 ## 🎯 Key Features
 
 ```text
